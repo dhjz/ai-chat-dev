@@ -252,6 +252,7 @@
                   }
                   try {
                     const json = JSON.parse(data);
+                    console.log(json);
                     if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                       const delta = json.choices[0].delta.content;
                       reactiveAIMessage.content += delta;
@@ -354,15 +355,15 @@
           }
           const theme = await localforage.getItem('theme');
           this.isDarkMode = theme === 'dark';
-           let settingStr = localStorage.getItem("dai-setting");
-            if(settingStr) {
-                const setting = JSON.parse(settingStr);
-                if (setting.providers && setting.providers.length) {
-                  this.providers = setting.providers;
-                  this.currProvider = localStorage.getItem("dai-currProvider") || this.providers[0].name;
-                  this.currModel = localStorage.getItem("dai-currModel") || this.providers[0].defaultModel;
-                }
+          let settingStr = localStorage.getItem("dai-setting");
+          if(settingStr) {
+            const setting = JSON.parse(settingStr);
+            if (setting.providers && setting.providers.length) {
+              this.providers = setting.providers;
+              this.currProvider = localStorage.getItem("dai-currProvider") || this.providers[0].name;
+              this.currModel = localStorage.getItem("dai-currModel") || this.providers[0].defaultModel;
             }
+          }
         }
       },
     });

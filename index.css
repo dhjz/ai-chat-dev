@@ -455,7 +455,7 @@ tr:nth-child(even) {
     0%,80%,100%{transform:scale(0);opacity:.5}
     40%{transform:scale(1);opacity:1}
 }
-.message-wrapper p code, .message-wrapper ul code, .message-wrapper ol code {
+.message-wrapper p code:not(pre code), .message-wrapper ul code:not(pre code), .message-wrapper ol code:not(pre code) {
     padding: 0.2em 0.4em;
     vertical-align: middle;
     background: rgba(175, 184, 193, .2);
