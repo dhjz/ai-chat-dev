@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 对话设置</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px; background-color: #f5f7fa; color: #333; padding: 20px;
+    }
+    :root {
+      --input-height: 32px; --input-radius: 4px; --card-radius: 8px; --border-color: #dcdfe6;
+      --primary-color: #409eff; --danger-color: #f56c6c; --text-color-primary: #303133;
+      --text-color-regular: #606266;
+    }
+    .flex { display: flex; gap: 8px; }
+    .flex-1 { flex: 1; }
+    .mb10 { margin-bottom: 10px; }
+    .dialog { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+    .dialog-cont { min-width: 40vw; max-width: min(1300px, 90vw); min-height: 40vh; max-height: 84vh; overflow: auto;  background: #fff; border-radius: 12px; padding: 10px; }
+    input:not([type="radio"]), select {
+      -webkit-appearance: none; background-color: #fff; border-radius: var(--input-radius);
+      border: 1px solid var(--border-color); color: var(--text-color-primary); display: inline-block;
+      height: var(--input-height); line-height: var(--input-height); padding: 0 12px; width: 100%;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--primary-color); }
+    select {
+      background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+      background-repeat: no-repeat; background-position: right 10px center; background-size: 1.2em;
+      padding-right: 30px;
+    }
+    input:disabled { background-color: #f5f7fa; cursor: not-allowed; }
+    button, .btn {
+      display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; cursor: pointer;
+      background: #fff; border: 1px solid var(--border-color); color: var(--text-color-primary);
+      -webkit-appearance: none; text-align: center; user-select: none; height: var(--input-height);
+      line-height: 1; padding: 0 15px; border-radius: var(--input-radius); transition: all 0.2s;
+      flex-shrink: 0; /* Prevent button from shrinking in flex container */
+    }
+    button+button { margin-left: 6px; }
+    .btn:hover { border-color: #c6e2ff; background-color: #ecf5ff; color: var(--primary-color); }
+    .btn:disabled { color: #a8abb2; cursor: not-allowed; background-color: #f5f7fa; border-color: #e4e7ed; }
+    .btn-primary { color: #fff; background-color: var(--primary-color); border-color: var(--primary-color); }
+    .btn-primary:hover { background-color: #66b1ff; border-color: #66b1ff; }
+    .btn-danger { color: #fff; background-color: var(--danger-color); border-color: var(--danger-color); }
+    .btn-danger:hover { background-color: #f78989; border-color: #f78989; }
+    .btn-small { height: 28px; padding: 0 8px; font-size: 12px; }
+    
+    #app { max-width: 900px; margin: 0 auto; }
+    h1 {font-size: 24px;color: var(--text-color-primary);margin-bottom: 10px; display: flex; justify-content: space-between;}
+    
+    .form-group { margin-bottom: 10px; display: flex; }
+    .form-group.last { margin-bottom: 0; }
+    .form-group label { color: var(--text-color-regular); font-weight: 600; width: 64px; margin-right: 16px; }
+    .form-group .radio-group label { display: inline-flex; align-items: center; margin-right: 20px; font-weight: normal; }
+    .form-group .radio-group input { margin-right: 6px; }
+
+    .provider-card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
+    }
+    .provider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid #e4e7ed;
+    }
+    .provider-header h2 { font-size: 18px; color: var(--text-color-primary); }
+
+    .provider-form-grid {
+      display: grid;
+      grid-template-columns: 64px 1fr 64px 1fr; 
+      gap: 6px 10px;
+      align-items: center;
+    }
+    .provider-form-grid > label {
+      font-weight: 600; color: var(--text-color-regular); text-align: right;
+    }
+    .grid-col-span-3 { grid-column: 2 / 5; }
+    
+    .input-with-button { display: flex; gap: 8px; }
+
+    /* Main Actions */
+    .main-actions {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: #fff;
+      border-radius: var(--card-radius);
+      border: 1px solid var(--border-color);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>AI Chat 设置 <button class="btn-primary" onclick="window.open('./')">Chat对话</button></h1>
+
+    <!-- <div class="provider-card">
+        <div class="form-group last">
+            <label>系统主题</label>
+            <div class="radio-group">
+                <label><input type="radio" v-model="setting.darkMode" value="true"> 开启</label>
+                <label><input type="radio" v-model="setting.darkMode" value="false"> 关闭</label>
+            </div>
+        </div>
+    </div> -->
+
+    <div v-for="(provider, index) in setting.providers" :key="index" class="provider-card">
+      <div class="provider-header">
+        <h2>服务商 #{{ index + 1 }} - {{ provider.name }}</h2>
+        <button class="btn btn-danger btn-small" @click="deleteProvider(index)">删除此服务商</button>
+      </div>
+
+      <div class="provider-form-grid">
+        <label>名称</label>
+        <input type="text" v-model="provider.name" placeholder="例如：阿里云, 不可重复">
+        <label>默认模型</label>
+        <select v-model="provider.defaultModel">
+            <option disabled value="">请先填写可用模型</option>
+            <option v-for="model in getModelsAsArray(provider)" :key="model" :value="model">{{ model }}</option>
+        </select>
+
+        <label>接口地址</label>
+        <div class="input-with-button grid-col-span-3">
+          <input type="text" v-model.trim="provider.url" @change="checkUrl(provider)" placeholder="https://openai.com/api/v1 (无最后斜杠 '/')">
+          <button class="btn" @click="fetchModels(provider)" :disabled="isFetchingModels">获取模型</button>
+        </div>
+
+        <label>密钥</label>
+        <input type="text" v-model="provider.key" placeholder="请输入你的 API Key" class="grid-col-span-3">
+        
+        <label>可用模型</label>
+        <input type="text" v-model="provider.models" class="grid-col-span-3" placeholder="用 '、' 分隔, 例如: qwen-turbo、qwen-plus">
+      </div>
+    </div>
+
+    <div class="main-actions">
+        <button class="btn" @click="addProvider">+ 添加一个新的服务商</button>
+        <div>
+          <button @click="impSetting">导入</button>
+          <button @click="copySetting">复制</button>
+          <button @click="expSetting">导出</button>
+          <button class="btn btn-primary" @click="saveSetting">保存</button>
+        </div>
+    </div>
+    <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
+      <div class="dialog-cont">
+        <div class="mb10">{{ remoteModels ? remoteModels.join('、') : '获取失败' }}</div>
+        <div class="mb10 flex" v-if="currProvider">{{ currProvider.name }}可用的模型: <input class="flex-1" type="text" v-model="currProvider.models" /></div>
+        <div><button class="btn-primary" @click="dialogShow = false">取消</button> 共 {{ remoteModels.length }} 个可用模型</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.17/vue.global.prod.min.js"></script>
+  <!-- <script src="index.js"></script> -->
+  <script src="index.min.js"></script>
+
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          dialogShow: false,
+          remoteModels: [],
+          currProvider: null,
+          isFetchingModels: false,
+          setting: {
+            providers: [
+              { name: '阿里通义', url: "https://dashscope.aliyuncs.com/compatible-mode/v1", key: '', defaultModel: 'qwen2.5-1.5b-instruct',
+                models: 'qwen2.5-1.5b-instruct、qwen2.5-0.5b-instruct、qwen2-1.5b-instruct、qwen1.5-1.8b-chat、qwen2.5-coder-3b-instruct'}
+            ],
+            // darkMode: 'true',
+          }
+        }
+      },
+      mounted(){
+        try {
+          let settingStr = localStorage.getItem("dai-setting");
+          if(settingStr) {
+              const savedSetting = JSON.parse(settingStr);
+              this.setting = savedSetting; 
+          }
+        } catch(e) {
+          console.error("Failed to parse settings from localStorage", e);
+        }
+      },
+      methods: {
+        getModelsAsArray(provider) {
+            if (typeof provider.models === 'string' && provider.models.trim()) {
+                return provider.models.split(/、|,|，|\s+/).map(m => m.trim()).filter(m => m);
+            }
+            return [];
+        },
+        addProvider() {
+            this.setting.providers.push({ name: '', url: '', key: '', models: '', defaultModel: ''});
+        },
+        deleteProvider(index) {
+            if (confirm(`确定要删除服务商 #${index + 1} (${this.setting.providers[index].name || '未命名'}) 吗？`)) {
+                this.setting.providers.splice(index, 1);
+            }
+        },
+        checkUrl(provider) {
+            if (provider.url && provider.url.trim().endsWith('/chat/completions')) provider.url = provider.url.slice(0, -17).trim();
+        },
+        async fetchModels(provider) {
+          if (this.isFetchingModels) return alert("正在获取中...");
+          if (!provider.url || !provider.key) {
+            alert('请先填写完整的“接口地址”和“密钥”。');
+            return;
+          }
+          this.isFetchingModels = true;
+          const modelsUrl = `${provider.url}/models`;
+
+          try {
+            const response = await fetch(modelsUrl, {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${provider.key}` }
+            });
+
+            if (!response.ok) {
+              throw new Error(`网络响应错误: ${response.status} ${response.statusText}`);
+            }
+
+            const json = await response.json();
+            if (json.data && Array.isArray(json.data)) {
+              const modelIds = json.data.map(model => model.id);
+              this.currProvider = provider;
+              this.dialogShow = true;
+              this.remoteModels = modelIds
+            } else {
+              throw new Error("返回的数据格式不符合 OpenAI 规范 (缺少 data 数组)");
+            }
+          } catch (error) {
+            console.error("获取模型列表失败:", error);
+            alert(`获取模型列表失败: ${error.message}`);
+          } finally {
+            this.isFetchingModels = false;
+          }
+        },
+        saveSetting(){
+          localStorage.setItem("dai-setting", JSON.stringify(this.setting));
+          alert("设置已成功保存！");
+        },
+        copySetting() {
+          navigator.clipboard.writeText(JSON.stringify(this.setting, null, 2)); 
+        },
+        expSetting() {
+          const url = URL.createObjectURL(new Blob([JSON.stringify(this.setting, null, 2)], { type: "application/json" }));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'DaiChat.setting.json';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        },
+        impSetting() {
+          uploadText().then(({ data}) => {
+            if (!data || !data.providers) return alert("文件格式不符合要求。");
+            console.log('导入的设置: ', data);
+            if (confirm(`确定要导入吗？(共 ${data.providers.length} 个服务商)`)) {
+              this.setting = data;
+            }
+          })
+        }
+      },
+    })
+    
+    app.mount('#app');
+
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).substring(2, 7); }
+
+    function uploadText() {
+      return new Promise((res, rej) => {
+        document.getElementById('importInput')?.remove()
+        const inputEl = document.createElement('input')
+        inputEl.type = 'file'
+        inputEl.id = "importInput" 
+        inputEl.style = "display: none;" 
+        document.body.append(inputEl)
+        inputEl.onchange = function () {
+          const resultFile = inputEl.files[0]
+          if (resultFile) {
+            const reader = new FileReader()
+            reader.readAsText(resultFile, 'UTF-8')
+            reader.onload = () => {
+                let obj = { name: resultFile.name, data: reader.result, size: resultFile.size, type: resultFile.type }
+                document.body.removeChild(inputEl)
+                try { obj.data = JSON.parse(obj.data) } catch(e) { }
+                res(obj)
+            }
+          } else {
+            document.body.removeChild(inputEl)
+            res('')
+          }
+        }
+        inputEl.click()
+      })
+    }
+  </script>
+</body>
+</html>

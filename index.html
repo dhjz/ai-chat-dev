@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 对话</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" id="theme-link" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+  <div id="app" v-cloak>
+    <div class="sidebar">
+      <div class="side-setting">
+        <div class="theme-toggle" @click="toggleTheme">{{ isDarkMode ? '☀️' : '🌙' }}</div>
+        <div class="setting-icon" title="设置" @click="open('setting.html')">⚙️</div>
+      </div>
+      <div class="sidebar-header">
+        <select v-model="currProvider" @change="providerChange" placeholder="选择服务商">
+          <option v-for="provider in providers" :key="provider.name" :value="provider.name">{{ provider.name }}</option>
+        </select>
+        <select v-model="currModel" @change="modelChange" placeholder="选择模型">
+          <option v-for="model in currModels" :key="model" :value="model">{{ model }}</option>
+        </select>
+        <button @click="createNewChat">+新对话</button>
+      </div>
+      <div class="history">
+        <div v-for="(chat, index) in chatHistory" :key="chat.id" class="history-item"
+          :class="{ active: chat.id === currentChatId }" @click="selectChat(chat.id)">
+          <span class="history-item-title">{{ chat.title }}</span>
+          <button @click.stop="deleteChat(chat.id)" class="delete-chat">×</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-container">
+      <div class="chat-messages" ref="chatMessages" @click="handleChatClick">
+        <div v-for="(message, index) in currentChatMessages" :key="index" class="message-wrapper" :class="message.role">
+          <div class="avatar">{{ message.role === 'user' ? 'U' : 'AI' }}</div>
+          <div class="content">
+            <div v-if="message.isError">
+              <span>请求失败, 请打开调试窗口查看错误信息.</span>
+              <button class="retry-btn" @click="retryLastMessage">重试</button>
+            </div>
+            <div v-else class="prose" v-html="renderMarkdown(message.content)"></div>
+            <div v-if="isStreaming && index === currentChatMessages.length - 1" class="pulse-dots"><i></i><i></i><i></i></div>
+            <div v-if="!message.isError" class="message-actions">
+              <button v-show="message.content" class="action-btn" @click="e => copyToClipboard(message.content, e.target)">复制</button>
+              <button v-if="message.role === 'user'" class="action-btn" @click="userInput = message.content">重问</button>
+              <div v-if="message.tokenCount" class="token-count"><span v-if="message.remark">模型: {{ message.remark }} </span> 长度: {{ message.tokenCount }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-input-wrapper">
+          <textarea v-model="userInput" class="chat-input" @keydown.enter="handleEnter"
+            placeholder="输入消息, 不带上下文...(Shift+Enter 换行)" rows="1"></textarea>
+          <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
+          <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
+          <button v-if="isStreaming" class="stop-btn" @click="stopStream">■</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.17/vue.global.prod.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.0.0/lib/marked.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <!-- <script src="index.js"></script> -->
+  <script src="index.min.js"></script>
+
+  <script>
+    localforage.setDriver([localforage.WEBSQL, localforage.INDEXEDDB])
+    localforage.config({
+      driver: localforage.INDEXEDDB,
+      name: 'dai-data-db',
+      storeName: 'daistore',
+    });
+
+    const { createApp, ref, onMounted, nextTick, computed, watch } = Vue;
+
+    const app = createApp({
+      data() {
+        return {
+          providers: [],
+          currProvider: '',
+          currModel: '',
+          userInput: '',
+          chatHistory: [],
+          currentChatId: null,
+          isStreaming: false,
+          isDarkMode: false,
+          abortController: null,
+        };
+      },
+      computed: {
+        currModels() {
+          return this.providers.find(x => x.name === this.currProvider)?.models.split(/、|,|，|\s+/).map(m => m.trim()).filter(m => m)
+           ?? [];
+        },
+        currentChat() {
+          return this.chatHistory.find(chat => chat.id === this.currentChatId);
+        },
+        currentChatMessages() {
+          return this.currentChat ? this.currentChat.messages : [];
+        }
+      },
+      watch: {
+        chatHistory: {
+          handler(newHistory) {
+            localforage.setItem('chatHistory', JSON.stringify(newHistory));
+          },
+          deep: true,
+        },
+        isDarkMode(val) {
+          localforage.setItem('theme', val ? 'dark' : 'light');
+          document.documentElement.className = val ? 'dark' : '';
+          document.querySelector("#theme-link").href = !val ? 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css'
+            : 'https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css';
+        },
+        userInput() {
+          // 自动调整textarea高度
+          this.$nextTick(() => {
+            const textarea = document.querySelector('.chat-input');
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight + 2) + 'px';
+          });
+        }
+      },
+      mounted() {
+        this.loadDataFromStorage();
+        // 初始化textarea高度
+        this.userInput = ' ';
+        this.$nextTick(() => { this.userInput = ''; });
+      },
+      methods: {
+        open(url) { window.open(url) },
+        renderMarkdown(content) {
+          const rawHtml = marked.parse(content);
+          const template = document.createElement('template');
+          template.innerHTML = rawHtml.trim();
+          template.content.querySelectorAll('a').forEach(x => x.setAttribute('target', '_blank'));
+          template.content.querySelectorAll('pre code').forEach((block) => {
+            const pre = block.parentElement;
+            pre.classList.add('line-numbers');
+            if (pre.querySelector('.copy-code-btn')) return; // 避免重复添加
+            const copyBtn = document.createElement('button');
+            copyBtn.innerText = '复制';
+            copyBtn.className = 'copy-code-btn';
+            pre.style.position = 'relative';
+            pre.appendChild(copyBtn);
+            Prism.highlightElement(block);
+          });
+          return template.innerHTML;
+        },
+        providerChange() {
+          localStorage.setItem('dai-currProvider', this.currProvider);
+          this.currModel = this.currModels[0] || '';
+          this.modelChange()
+        },
+        modelChange() {
+          localStorage.setItem('dai-currModel', this.currModel);
+        },
+        handleChatClick(event) {
+          if (event.target.classList.contains('copy-code-btn')) {
+            const pre = event.target.closest('pre');
+            if (pre) {
+              const codeBlock = pre.querySelector('code');
+              if (codeBlock) {
+                this.copyToClipboard(codeBlock.textContent, event.target);
+              }
+            }
+          }
+        },
+        scrollToBottom() {
+          nextTick(() => {
+            const chatMessages = this.$refs.chatMessages;
+            if (chatMessages) {
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          });
+        },
+        handleEnter(e) {
+          if (e.ctrlKey || !e.shiftKey) {
+            e.preventDefault();
+            this.sendMessage()
+          }
+        },
+        async sendMessage() {
+          if (!this.userInput.trim() || this.isStreaming) return;
+          console.log(this.providers, this.currProvider, this.currModel, this.userInput);
+          const provider = this.providers.find(p => p.name === this.currProvider);
+          if (!provider || !provider.url) return alert(`没有配置正确的服务商(${provider.name})url，无法发送请求。`);
+          if (!provider.key) return alert('没有配置正确的key，无法发送请求。');
+          if (!this.currModel) return alert('请先选择模型。');
+
+          const userMessage = { role: 'user', content: this.userInput.trim() };
+          if (!this.currentChat) {
+            this.createNewChat();
+          }
+          this.currentChat.messages.push(userMessage);
+          this.userInput = '';
+          this.scrollToBottom();
+
+          const aiMessage = { role: 'assistant', content: '', remark: '', tokenCount: 0, isError: false };
+          this.currentChat.messages.push(aiMessage);
+          const reactiveAIMessage = this.currentChat.messages[this.currentChat.messages.length - 1];
+
+          this.isStreaming = true;
+          this.abortController = new AbortController();
+
+          try {
+            const response = await fetch(provider.url + '/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + provider.key
+              },
+              body: JSON.stringify({
+                model: this.currModel,
+                messages: this.currentChat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+                stream: true
+              }),
+              signal: this.abortController.signal,
+            });
+
+            if (!response.ok) {
+              throw new Error(`Network response was not ok. Status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop();
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.substring(6);
+                  if (data.trim() === '[DONE]') {
+                    return;
+                  }
+                  try {
+                    const json = JSON.parse(data);
+                    if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
+                      const delta = json.choices[0].delta.content;
+                      reactiveAIMessage.content += delta;
+                      this.scrollToBottom();
+                    }
+                  } catch (e) {
+                    console.error('Error parsing stream data chunk:', data, e);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            if (error.name === 'AbortError') {
+              reactiveAIMessage.content += '\n\n(请求已中断)';
+            } else {
+              reactiveAIMessage.isError = true;
+              reactiveAIMessage.content = `请求失败: ${error.message}`;
+            }
+          } finally {
+            this.isStreaming = false;
+            this.abortController = null;
+            // 模拟获取token消耗
+            reactiveAIMessage.tokenCount = reactiveAIMessage.content.length;
+            reactiveAIMessage.remark = provider.name + '(' + this.currModel + ')';
+            this.scrollToBottom();
+            if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
+              this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
+            }
+          }
+        },
+        stopStream() {
+          if (this.abortController) {
+            this.abortController.abort();
+          }
+        },
+        retryLastMessage() {
+          const lastMessageIndex = this.currentChat.messages.length - 1;
+          if (lastMessageIndex >= 0 && this.currentChat.messages[lastMessageIndex].isError) {
+            this.currentChat.messages.pop(); // 移除错误消息
+            const lastUserMessage = this.currentChat.messages[this.currentChat.messages.length - 1];
+            if (lastUserMessage && lastUserMessage.role === 'user') {
+              this.userInput = lastUserMessage.content;
+              this.currentChat.messages.pop(); // 移除最后的用户消息以便重新发送
+              this.sendMessage();
+            }
+          }
+        },
+        copyToClipboard(text, buttonElement) {
+          navigator.clipboard.writeText(text).then(() => {
+            if (buttonElement) {
+              const originalText = buttonElement.innerText;
+              buttonElement.innerText = '已复制!';
+              setTimeout(() => { buttonElement.innerText = originalText }, 2000);
+            }
+          }).catch(err => {
+            console.error('无法复制文本: ', err);
+            dnotify('复制失败!');
+          });
+        },
+        createNewChat() {
+          const newChat = {
+            id: Date.now(),
+            title: '新对话',
+            messages: [],
+          };
+          this.chatHistory.unshift(newChat);
+          this.currentChatId = newChat.id;
+        },
+        selectChat(chatId) {
+          this.currentChatId = chatId;
+        },
+        deleteChat(chatId) {
+          const chatIndex = this.chatHistory.findIndex(chat => chat.id === chatId);
+          if (chatIndex === -1) return;
+
+          this.chatHistory.splice(chatIndex, 1);
+
+          if (this.currentChatId === chatId) {
+            if (this.chatHistory.length > 0) {
+              // 选中被删除项的下一个或上一个，或者第一个
+              const newIndex = Math.min(chatIndex, this.chatHistory.length - 1);
+              this.currentChatId = this.chatHistory[newIndex].id;
+            } else {
+              this.createNewChat();
+            }
+          }
+        },
+        toggleTheme() {
+          this.isDarkMode = !this.isDarkMode;
+        },
+        async loadDataFromStorage() {
+          const history = await localforage.getItem('chatHistory');
+          if (history) {
+            this.chatHistory = JSON.parse(history);
+          }
+          if (this.chatHistory.length > 0) {
+            this.currentChatId = this.chatHistory[0].id;
+          } else {
+            this.createNewChat();
+          }
+          const theme = await localforage.getItem('theme');
+          this.isDarkMode = theme === 'dark';
+           let settingStr = localStorage.getItem("dai-setting");
+            if(settingStr) {
+                const setting = JSON.parse(settingStr);
+                if (setting.providers && setting.providers.length) {
+                  this.providers = setting.providers;
+                  this.currProvider = localStorage.getItem("dai-currProvider") || this.providers[0].name;
+                  this.currModel = localStorage.getItem("dai-currModel") || this.providers[0].defaultModel;
+                }
+            }
+        }
+      },
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+
+</html>
