@@ -130,7 +130,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .history-item:hover {
@@ -141,7 +141,6 @@ body {
 .history-item.active {
   background-color: var(--c-accent);
   color: white;
-  font-weight: 600;
 }
 
 .history-item.active .delete-chat,
