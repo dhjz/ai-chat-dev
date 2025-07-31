@@ -12,11 +12,42 @@
      if (html) {
        document.write(html);
        document.close();
+       setTimeout(() => {
+        const downBtn = document.createElement('button');
+        downBtn.innerText = '下载Html';
+        downBtn.style = 'position: fixed;top: 5px;right: 5px;background: #fff;font-size: 14px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;';
+        downBtn.onclick = () => downloadText(html, 'index.html')
+        document.body.append(downBtn);
+        const copyBtn = document.createElement('button');
+        copyBtn.innerText = '复制Html';
+        copyBtn.style = 'position: fixed;top: 34px;right: 5px;background: #fff;font-size: 14px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;';
+        copyBtn.onclick = () => navigator.clipboard.writeText(html)
+        document.body.append(copyBtn);
+       }, 500)
      } else {
        document.write('<h1 style="text-align: center; padding: 30px;">暂无可运行代码!</h1>');
      }
    };
    loadFromStorage();
+
+   function download(blob, name) {
+      if (window.navigator.msSaveOrOpenBlob) {
+        navigator.msSaveBlob(blob, name)
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        URL.revokeObjectURL(url);
+        setTimeout(() => link.remove(), 200);
+      }
+    }
+
+    function downloadText(text, name) {
+      download(new Blob([text], { type: 'text/plain;charset=utf-8' }), name)
+    }
 
    let themesAll = ['prism', 'prism-coy', 'prism-dark', 'prism-okaidia', 'prism-tomorrow', 'prism-solarizedlight', 'prism-twilight',
       't-prism-a11y-dark', 't-prism-atom-dark', 't-prism-base16-ateliersulphurpool.light', 't-prism-cb', 't-prism-coldark-cold', 't-prism-coldark-dark', 

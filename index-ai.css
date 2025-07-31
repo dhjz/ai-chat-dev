@@ -428,6 +428,23 @@ body {
   left: 8px;
   top: 8px;
 }
+#to-top {
+  position: absolute;
+  top: -42px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  font-size: 20px;
+  line-height: 31px;
+  text-align: center;
+  background: #d5d5d5;
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  filter: hue-rotate(165deg);
+  opacity: .8;
+  user-select: none;
+}
 
 ::-webkit-scrollbar {
   width: 12px;
