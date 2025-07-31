@@ -6,13 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI 对话</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
   <link rel="stylesheet" id="theme-link" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
   <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
   <div id="app" v-cloak>
-    <div class="sidebar">
+    <div class="sidebar" :class="{ hidebar: !showSidebar }">
       <div class="side-setting">
         <div class="theme-toggle" @click="toggleTheme">{{ isDarkMode ? '☀️' : '🌙' }}</div>
         <div class="setting-icon" title="设置" @click="open('setting.html')">⚙️</div>
@@ -24,6 +25,9 @@
         <select v-model="currModel" @change="modelChange" placeholder="选择模型">
           <option v-for="model in currModels" :key="model" :value="model">{{ model }}</option>
         </select>
+        <select v-model="currTheme" @change="themeChange" placeholder="选择代码主题">
+          <option v-for="theme in themes" :key="theme" :value="theme">{{ theme }}</option>
+        </select>
         <button @click="createNewChat">+新对话</button>
       </div>
       <div class="history">
@@ -34,7 +38,7 @@
         </div>
       </div>
     </div>
-    <div class="chat-container">
+    <div class="chat-container" @click="showSidebar = false">
       <div class="chat-messages" ref="chatMessages" @click="handleChatClick">
         <div v-for="(message, index) in currentChatMessages" :key="index" class="message-wrapper" :class="message.role">
           <div class="avatar">{{ message.role === 'user' ? 'U' : 'AI' }}</div>
@@ -47,13 +51,16 @@
             <div v-if="isStreaming && index === currentChatMessages.length - 1" class="pulse-dots"><i></i><i></i><i></i></div>
             <div v-if="!message.isError" class="message-actions">
               <button v-show="message.content" class="action-btn" @click="e => copyToClipboard(message.content, e.target)">复制</button>
+              <button v-if="message.role === 'assistant' && index === currentChatMessages.length - 1" class="action-btn" @click="retryLastMessage">重试</button>
               <button v-if="message.role === 'user'" class="action-btn" @click="userInput = message.content">重问</button>
+              <button v-if="message.role === 'user'" class="action-btn" @click="delMessage(message, index)">删除</button>
               <div v-if="message.tokenCount" class="token-count"><span v-if="message.remark">模型: {{ message.remark }} </span> 长度: {{ message.tokenCount }}</div>
             </div>
           </div>
         </div>
       </div>
       <div class="chat-input-area">
+        <div class="input-before" title="支持上下文, 消耗更多token" @click="useContext =! useContext">{{ useContext ? '🟢' : '🔴' }}</div>
         <div class="chat-input-wrapper">
           <textarea v-model="userInput" class="chat-input" @keydown.enter="handleEnter"
             placeholder="输入消息, 不带上下文...(Shift+Enter 换行)" rows="1"></textarea>
@@ -62,6 +69,10 @@
           <button v-if="isStreaming" class="stop-btn" @click="stopStream">■</button>
         </div>
       </div>
+      <div class="toggle-side" @click.stop="showSidebar = !showSidebar">📰</div>
+    </div>
+    <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
+      <div class="dialog-cont"><iframe :src="dialogHtml" frameborder="0"></iframe></div>
     </div>
   </div>
 
@@ -80,12 +91,18 @@
       name: 'dai-data-db',
       storeName: 'daistore',
     });
+    const themeList = ['prism', 'prism-coy', 'prism-okaidia', 'prism-tomorrow', 'prism-solarizedlight', 't-prism-vs', 't-prism-vsc-dark-plus',
+     't-prism-a11y-dark', 't-prism-atom-dark', 't-prism-coldark-cold', 't-prism-coldark-dark',  't-prism-darcula', 't-prism-dracula', 't-prism-nord',
+     't-prism-ghcolors', 't-prism-hopscotch', 't-prism-lucario', 't-prism-material-dark', 't-prism-material-oceanic', 't-prism-one-dark', 't-prism-one-light']
 
     const { createApp, ref, onMounted, nextTick, computed, watch } = Vue;
 
     const app = createApp({
       data() {
         return {
+          showSidebar: false,
+          dialogShow: false,
+          dialogHtml: '',
           providers: [],
           currProvider: '',
           currModel: '',
@@ -95,6 +112,9 @@
           isStreaming: false,
           isDarkMode: false,
           abortController: null,
+          useContext: localStorage.getItem('dai-useContext') === 'true',
+          themes: themeList,
+          currTheme: 'prism',
         };
       },
       computed: {
@@ -119,8 +139,11 @@
         isDarkMode(val) {
           localforage.setItem('theme', val ? 'dark' : 'light');
           document.documentElement.className = val ? 'dark' : '';
-          document.querySelector("#theme-link").href = !val ? 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css'
+          document.querySelector("#theme-link").href = !val ? this.getThemeLink(this.currTheme)
             : 'https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css';
+        },
+        useContext(val) {
+          localStorage.setItem('dai-useContext', val);
         },
         userInput() {
           // 自动调整textarea高度
@@ -147,6 +170,13 @@
           template.content.querySelectorAll('pre code').forEach((block) => {
             const pre = block.parentElement;
             pre.classList.add('line-numbers');
+            if (block.className.includes('html') && !pre.querySelector('.run-btn')) {
+              // 加一个运行按钮
+              const btnEl = document.createElement('button');
+              btnEl.className = 'run-btn';
+              btnEl.innerText = '▶️运行';
+              pre.appendChild(btnEl);
+            }
             if (pre.querySelector('.copy-code-btn')) return; // 避免重复添加
             const copyBtn = document.createElement('button');
             copyBtn.innerText = '复制';
@@ -165,14 +195,43 @@
         modelChange() {
           localStorage.setItem('dai-currModel', this.currModel);
         },
+        themeChange() {
+          document.querySelector("#theme-link").href = this.getThemeLink(this.currTheme);
+          localStorage.setItem('dai-theme', this.currTheme);
+        },
+        getThemeLink(theme) {
+          return theme.startsWith('t-') ? `https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/${theme.replace('t-', '')}.min.css`
+            : `https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/${theme}.min.css`;
+        },
         handleChatClick(event) {
           if (event.target.classList.contains('copy-code-btn')) {
             const pre = event.target.closest('pre');
             if (pre) {
               const codeBlock = pre.querySelector('code');
+              if (codeBlock) this.copyToClipboard(codeBlock.textContent, event.target);
+            }
+          }
+          if (event.target.classList.contains('run-btn')) {
+            const pre = event.target.closest('pre');
+            if (pre) {
+              const codeBlock = pre.querySelector('code');
               if (codeBlock) {
-                this.copyToClipboard(codeBlock.textContent, event.target);
-              }
+                const prose = event.target.closest('.prose');
+                let styleHtml = '', jsHtml = '';
+                console.log(prose.querySelectorAll('code[class="language-css"]'));
+                prose.querySelectorAll('code[class="language-css"]').forEach((c) => styleHtml += c.textContent);
+                prose.querySelectorAll('code[class="language-javascript"]').forEach((c) => jsHtml += c.textContent);
+                localStorage.setItem('dai-runHtml', codeBlock.textContent.replace('<\/body>', `<style>${styleHtml}<\/style><script>${jsHtml}<\/script><\/body>`));
+                // if (window.openWin && !window.openWin.closed) {
+                //   window.openWin.location.reload()
+                // } else {
+                  window.openWin = window.open('run.html');
+                // }
+                window.openWin.focus()
+                // const url = URL.createObjectURL(new Blob([codeBlock.textContent], { type: "text/html" }));
+                // window.open(url, "_blank")?.focus();
+                // setTimeout(() => URL.revokeObjectURL(url), 500);
+              };
             }
           }
         },
@@ -188,6 +247,11 @@
           if (e.ctrlKey || !e.shiftKey) {
             e.preventDefault();
             this.sendMessage()
+          }
+        },
+        delMessage(msg, index) {
+          if (confirm(`确定要删除该条消息和回答吗?`)) {
+            this.currentChat.messages.splice(index, 2);
           }
         },
         async sendMessage() {
@@ -222,7 +286,7 @@
               },
               body: JSON.stringify({
                 model: this.currModel,
-                messages: this.currentChat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+                messages: this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content })),
                 stream: true
               }),
               signal: this.abortController.signal,
@@ -247,6 +311,7 @@
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   const data = line.substring(6);
+                  console.log(data);
                   if (data.trim() === '[DONE]') {
                     return;
                   }
@@ -290,7 +355,10 @@
         },
         retryLastMessage() {
           const lastMessageIndex = this.currentChat.messages.length - 1;
-          if (lastMessageIndex >= 0 && this.currentChat.messages[lastMessageIndex].isError) {
+          if (!this.currentChat.messages[lastMessageIndex].isError && !confirm('是否确定重试回答此消息？')) {
+            return
+          }
+          if (lastMessageIndex >= 0) { //  && this.currentChat.messages[lastMessageIndex].isError
             this.currentChat.messages.pop(); // 移除错误消息
             const lastUserMessage = this.currentChat.messages[this.currentChat.messages.length - 1];
             if (lastUserMessage && lastUserMessage.role === 'user') {
@@ -304,12 +372,12 @@
           navigator.clipboard.writeText(text).then(() => {
             if (buttonElement) {
               const originalText = buttonElement.innerText;
-              buttonElement.innerText = '已复制!';
+              buttonElement.innerText = '已复制';
               setTimeout(() => { buttonElement.innerText = originalText }, 2000);
             }
           }).catch(err => {
             console.error('无法复制文本: ', err);
-            dnotify('复制失败!');
+            alert('复制失败!');
           });
         },
         createNewChat() {
@@ -327,6 +395,8 @@
         deleteChat(chatId) {
           const chatIndex = this.chatHistory.findIndex(chat => chat.id === chatId);
           if (chatIndex === -1) return;
+          console.log(this.chatHistory[chatIndex]);
+          if (this.chatHistory[chatIndex].messages.length > 0 && !confirm(`确定删除该会话吗?`)) return;
 
           this.chatHistory.splice(chatIndex, 1);
 
@@ -355,6 +425,10 @@
           }
           const theme = await localforage.getItem('theme');
           this.isDarkMode = theme === 'dark';
+          this.currTheme = localStorage.getItem('dai-theme') || 'prism';
+          if (!this.isDarkMode) {
+            this.themeChange()
+          }
           let settingStr = localStorage.getItem("dai-setting");
           if(settingStr) {
             const setting = JSON.parse(settingStr);

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>run-code</title>
+</head>
+<body>
+  <script>
+    const loadFromStorage = () => {
+     const html = localStorage.getItem('dai-runHtml');
+     if (html) {
+       document.write(html);
+       document.close();
+     } else {
+       document.write('<h1 style="text-align: center; padding: 30px;">暂无可运行代码!</h1>');
+     }
+   };
+   loadFromStorage();
+
+   let themesAll = ['prism', 'prism-coy', 'prism-dark', 'prism-okaidia', 'prism-tomorrow', 'prism-solarizedlight', 'prism-twilight',
+      't-prism-a11y-dark', 't-prism-atom-dark', 't-prism-base16-ateliersulphurpool.light', 't-prism-cb', 't-prism-coldark-cold', 't-prism-coldark-dark', 
+      't-prism-coy-without-shadows', 't-prism-darcula', 't-prism-dracula', 't-prism-duotone-dark', 't-prism-duotone-earth', 't-prism-duotone-forest',
+      't-prism-duotone-light', 't-prism-duotone-sea', 't-prism-duotone-space', 't-prism-ghcolors', 't-prism-gruvbox-dark', 't-prism-gruvbox-light',
+      't-prism-holi-theme', 't-prism-hopscotch', 't-prism-lucario', 't-prism-material-dark', 't-prism-material-light', 't-prism-material-oceanic',
+      't-prism-night-owl', 't-prism-nord', 't-prism-one-dark', 't-prism-one-light', 't-prism-pojoaque', 't-prism-shades-of-purple', 
+      't-prism-solarized-dark-atom', 't-prism-synthwave84', 't-prism-vs', 't-prism-vsc-dark-plus', 't-prism-xonokai', 't-prism-z-touch']
+  </script>
+</body>
+</html>
