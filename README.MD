@@ -14,9 +14,13 @@
 
 # 其他说明
 - 页面效果图见`appimg`目录
+- 主页面: 
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/ai-chat-dev@master/appimg/app1.jpg" style="width: 340px;"/>
+- HTML直接预览: 
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/ai-chat-dev@master/appimg/app2.jpg" style="width: 340px;"/>
+- 黑夜模式: 
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/ai-chat-dev@master/appimg/app3.jpg" style="width: 340px;"/>
+- 配置页: 
 - <img src="https://gcore.jsdelivr.net/gh/dhjz/ai-chat-dev@master/appimg/app4.jpg" style="width: 340px;"/>
 
 - 项目地址: [https://github.com/dhjz/ai-chat-dev]( https://github.com/dhjz/ai-chat-dev)  
