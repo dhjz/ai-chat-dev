@@ -40,7 +40,7 @@
     </div>
     <div class="chat-container" @click="showSidebar = false">
       <div class="chat-messages" ref="chatMessages" @click="handleChatClick">
-        <div v-for="(message, index) in currentChatMessages" :key="index" class="message-wrapper" :class="message.role">
+        <div v-for="(message, index) in currentChatMessages" :key="index" :id="'curr-chat-' + index" class="message-wrapper" :class="message.role">
           <div class="avatar">{{ message.role === 'user' ? 'U' : 'AI' }}</div>
           <div class="content">
             <div v-if="message.isError">
@@ -68,9 +68,14 @@
           <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
           <button v-if="isStreaming" class="stop-btn" @click="stopStream">■</button>
         </div>
-        <div id="to-top" @click="goTop" @dblclick="scrollToBottom" title="双击回底部">🔝</div>
+        <div id="to-top" @click="scrollToBottom" @dblclick="goTop" title="双击回顶部">⇩</div>
       </div>
       <div class="toggle-side" @click.stop="showSidebar = !showSidebar">📰</div>
+    </div>
+    <div class="chat-nav">
+      <div class="nav-item" v-for="(message, ind) in currentChatMessages" :key="ind" @click="selectChat(currentChatId)">
+          <span v-if="message.role === 'user'" @click="scrollToChat(ind)"><i>➤</i>{{ message.content }}</span>
+      </div>
     </div>
     <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
       <div class="dialog-cont"><iframe :src="dialogHtml" frameborder="0"></iframe></div>
@@ -132,12 +137,6 @@
         }
       },
       watch: {
-        chatHistory: {
-          handler(newHistory) {
-            localforage.setItem('chatHistory', zipStr8(JSON.stringify(newHistory)));
-          },
-          deep: true,
-        },
         isDarkMode(val) {
           localforage.setItem('theme', val ? 'dark' : 'light');
           document.documentElement.className = val ? 'dark' : '';
@@ -164,6 +163,11 @@
       },
       methods: {
         open(url) { window.open(url) },
+        saveHistory() {
+            let data = zipStr8(JSON.stringify(this.chatHistory));
+            console.log(`save chatHistory, length: ${data.length}, size: ${(data.length / 1024).toFixed(2)}kb`);
+            localforage.setItem('chatHistory', data);
+        },
         renderMarkdown(content) {
           const rawHtml = marked.parse(content);
           const template = document.createElement('template');
@@ -237,6 +241,9 @@
             }
           }
         },
+        scrollToChat(ind) {
+          document.querySelector('#curr-chat-' + ind)?.scrollIntoView({ behavior: 'smooth' });
+        },
         scrollToBottom() {
           nextTick(() => {
             const chatMessages = this.$refs.chatMessages;
@@ -258,6 +265,7 @@
         delMessage(msg, index) {
           if (confirm(`确定要删除该条消息和回答吗?`)) {
             this.currentChat.messages.splice(index, 2);
+            this.saveHistory()
           }
         },
         async sendMessage() {
@@ -282,6 +290,7 @@
 
           this.isStreaming = true;
           this.abortController = new AbortController();
+          this.saveHistory()
 
           try {
             const response = await fetch(provider.url + '/chat/completions', {
@@ -352,6 +361,7 @@
             if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
               this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
             }
+            this.saveHistory()
           }
         },
         stopStream() {
@@ -394,6 +404,7 @@
           };
           this.chatHistory.unshift(newChat);
           this.currentChatId = newChat.id;
+          this.saveHistory()
         },
         selectChat(chatId) {
           this.currentChatId = chatId;
@@ -405,6 +416,7 @@
           if (this.chatHistory[chatIndex].messages.length > 0 && !confirm(`确定删除该会话吗?`)) return;
 
           this.chatHistory.splice(chatIndex, 1);
+          this.saveHistory()
 
           if (this.currentChatId === chatId) {
             if (this.chatHistory.length > 0) {
@@ -420,7 +432,7 @@
           this.isDarkMode = !this.isDarkMode;
         },
         async loadDataFromStorage() {
-          const history = await localforage.getItem('chatHistory');
+          let history = await localforage.getItem('chatHistory');
           if (history) {
             if (history instanceof Uint8Array) {
               history = unzipStr8(history);
@@ -455,7 +467,7 @@
       },
     });
 
-    app.mount('#app').then(x => window.vueApp = x);
+    vueApp = app.mount('#app');
 
     // 压缩字符串为Uint8Array
     function zipStr8(str) {
