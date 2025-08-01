@@ -441,7 +441,11 @@
               this.providers = setting.providers;
               this.currProvider = localStorage.getItem("dai-currProvider") || this.providers[0].name;
               this.currModel = localStorage.getItem("dai-currModel") || this.providers[0].defaultModel;
+              return;
             }
+          }
+          if (confirm('您还没有配置任何服务商, 是否前往配置?')) {
+            window.open('./setting.html')
           }
         }
       },
