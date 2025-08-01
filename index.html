@@ -82,6 +82,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <!-- <script src="index.js"></script> -->
   <script src="index.min.js"></script>
 
@@ -133,7 +134,7 @@
       watch: {
         chatHistory: {
           handler(newHistory) {
-            localforage.setItem('chatHistory', JSON.stringify(newHistory));
+            localforage.setItem('chatHistory', zipStr8(JSON.stringify(newHistory)));
           },
           deep: true,
         },
@@ -421,6 +422,9 @@
         async loadDataFromStorage() {
           const history = await localforage.getItem('chatHistory');
           if (history) {
+            if (history instanceof Uint8Array) {
+              history = unzipStr8(history);
+            }
             this.chatHistory = JSON.parse(history);
           }
           if (this.chatHistory.length > 0) {
@@ -451,7 +455,16 @@
       },
     });
 
-    app.mount('#app');
+    app.mount('#app').then(x => window.vueApp = x);
+
+    // 压缩字符串为Uint8Array
+    function zipStr8(str) {
+      return pako.deflate(new TextEncoder().encode(str), { level: 9 });
+    }
+    // 解压Uint8Array为字符串 // arr instanceof Uint8Array === true
+    function unzipStr8(arr) {
+      return pako.inflate(arr, { to: 'string' });
+    }
   </script>
 </body>
 
