@@ -299,6 +299,7 @@
           this.isStreaming = true;
           this.abortController = new AbortController();
           this.saveHistory()
+          const startTime = Date.now();
 
           try {
             const response = await fetch(provider.url + '/chat/completions', {
@@ -364,7 +365,7 @@
             this.abortController = null;
             // 模拟获取token消耗
             reactiveAIMessage.tokenCount = reactiveAIMessage.content.length;
-            reactiveAIMessage.remark = provider.name + '(' + this.currModel + ')';
+            reactiveAIMessage.remark = provider.name + '(' + this.currModel + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's'
             this.scrollToBottom();
             if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
               this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
