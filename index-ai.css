@@ -269,7 +269,7 @@ body {
   /* border: 1px solid var(--c-border); */
 }
 
-.copy-code-btn, .run-btn {
+.copy-code-btn, .run-btn, .down-code-btn {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -282,10 +282,14 @@ body {
   opacity: 0.7;
   transition: all 0.2s;
 }
+.down-code-btn {
+  right: 8px;
+  top: 38px;
+}
 .run-btn {
   right: 70px;
 }
-.run-btn:hover {
+.run-btn:hover, .copy-code-btn:hover, .down-code-btn:hover {
   opacity: 1;
 }
 
@@ -544,6 +548,9 @@ tr:nth-child(even) {
 }
 code[class*=language-], pre[class*=language-] {
   text-shadow: none !important;
+}
+.message-wrapper .token.operator {
+  background: none !important;
 }
 
 @media screen and (max-width: 770px) {

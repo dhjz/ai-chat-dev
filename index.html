@@ -87,6 +87,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-java.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-batch.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-go.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <!-- <script src="index.js"></script> -->
   <script src="index.min.js"></script>
@@ -178,17 +184,11 @@
             pre.classList.add('line-numbers');
             if (block.className.includes('html') && !pre.querySelector('.run-btn')) {
               // 加一个运行按钮
-              const btnEl = document.createElement('button');
-              btnEl.className = 'run-btn';
-              btnEl.innerText = '▶️运行';
-              pre.appendChild(btnEl);
+              appendNode(pre, 'button', '▶️运行', 'run-btn');
             }
             if (pre.querySelector('.copy-code-btn')) return; // 避免重复添加
-            const copyBtn = document.createElement('button');
-            copyBtn.innerText = '复制';
-            copyBtn.className = 'copy-code-btn';
-            pre.style.position = 'relative';
-            pre.appendChild(copyBtn);
+            appendNode(pre, 'button', '复制', 'copy-code-btn');
+            appendNode(pre, 'button', '下载', 'down-code-btn');
             Prism.highlightElement(block);
           });
           return template.innerHTML;
@@ -213,28 +213,36 @@
           if (event.target.classList.contains('copy-code-btn')) {
             const pre = event.target.closest('pre');
             if (pre) {
-              const codeBlock = pre.querySelector('code');
-              if (codeBlock) this.copyToClipboard(codeBlock.textContent, event.target);
+              const codeEle = pre.querySelector('code');
+              if (codeEle) this.copyToClipboard(codeEle.textContent, event.target);
+            }
+          }
+          if (event.target.classList.contains('down-code-btn')) {
+            const pre = event.target.closest('pre');
+            if (pre) {
+              const codeEle = pre.querySelector('code');
+              // 根据code的language生成文件后缀名
+              if (codeEle) downloadText(codeEle.textContent, 'index' + getFileExt(codeEle));
             }
           }
           if (event.target.classList.contains('run-btn')) {
             const pre = event.target.closest('pre');
             if (pre) {
-              const codeBlock = pre.querySelector('code');
-              if (codeBlock) {
+              const codeEle = pre.querySelector('code');
+              if (codeEle) {
                 const prose = event.target.closest('.prose');
                 let styleHtml = '', jsHtml = '';
                 console.log(prose.querySelectorAll('code[class="language-css"]'));
                 prose.querySelectorAll('code[class="language-css"]').forEach((c) => styleHtml += c.textContent);
                 prose.querySelectorAll('code[class="language-javascript"]').forEach((c) => jsHtml += c.textContent);
-                localStorage.setItem('dai-runHtml', codeBlock.textContent.replace('<\/body>', `<style>\n${styleHtml}<\/style>\n<script>\n${jsHtml}<\/script>\n<\/body>`));
+                localStorage.setItem('dai-runHtml', codeEle.textContent.replace('<\/body>', `<style>\n${styleHtml}<\/style>\n<script>\n${jsHtml}<\/script>\n<\/body>`));
                 // if (window.openWin && !window.openWin.closed) {
                 //   window.openWin.location.reload()
                 // } else {
                   window.openWin = window.open('run.html');
                 // }
                 window.openWin.focus()
-                // const url = URL.createObjectURL(new Blob([codeBlock.textContent], { type: "text/html" }));
+                // const url = URL.createObjectURL(new Blob([codeEle.textContent], { type: "text/html" }));
                 // window.open(url, "_blank")?.focus();
                 // setTimeout(() => URL.revokeObjectURL(url), 500);
               };
@@ -469,6 +477,7 @@
 
     vueApp = app.mount('#app');
 
+    /**************** 工具函数 *******************/
     // 压缩字符串为Uint8Array
     function zipStr8(str) {
       return pako.deflate(new TextEncoder().encode(str), { level: 9 });
@@ -477,6 +486,36 @@
     function unzipStr8(arr) {
       return pako.inflate(arr, { to: 'string' });
     }
+
+    function appendNode(parent, name, text, cls) {
+      var btn = document.createElement(name);
+      btn.innerText = text;
+      btn.className = cls;
+      parent.appendChild(btn);
+      return btn;
+    }
+
+    function downloadText(text, name) {
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+      const link = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(link).click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function getFileExt(ele) {
+      const extensionMap = {
+        js: 'js', javascript: 'js', ts: 'ts', typescript: 'ts', py: 'py', python: 'py', java: 'java', c: 'c', sql: 'sql', 
+        cpp: 'cpp', 'c++': 'cpp', cs: 'cs', csharp: 'cs',  go: 'go', php: 'php', ruby: 'rb', html: 'html', xml: 'xml', json: 'json',
+        css: 'css', scss: 'scss', less: 'less', yml: 'yml', yaml: 'yaml', shell: 'sh', bash: 'sh', sh: 'sh', bat: 'bat', batch: 'bat',
+      };
+      if (!ele || !ele.classList) return '';
+      const cls = Array.from(ele.classList).find(x => x.startsWith('language-'));
+      if (!cls) return '';
+      const lang = cls.substring('language-'.length).toLowerCase();
+      return '.' + (extensionMap[lang] || lang);
+    }
+
   </script>
 </body>
 
