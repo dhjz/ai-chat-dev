@@ -269,7 +269,7 @@ body {
   /* border: 1px solid var(--c-border); */
 }
 
-.copy-code-btn, .run-btn, .down-code-btn {
+.copy-code-btn, .run-btn, .down-code-btn, .expand-btn {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -289,12 +289,19 @@ body {
 .run-btn {
   right: 70px;
 }
-.run-btn:hover, .copy-code-btn:hover, .down-code-btn:hover {
+.expand-btn {
+  top: auto;
+  bottom: 8px;
+  border: none;
+  background: #66b1ff;
+}
+.run-btn:hover, .copy-code-btn:hover, .down-code-btn:hover, .expand-btn:hover {
   opacity: 1;
 }
-
-.copy-code-btn:hover {
-  opacity: 1;
+pre.over-code {
+  max-height: 400px;
+  overflow: auto;
+  box-shadow: inset 0px -33px 18px -14px rgba(40, 44, 52, 0.3);
 }
 
 .message-actions {
