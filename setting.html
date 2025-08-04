@@ -55,7 +55,7 @@
     
     .form-group { margin-bottom: 10px; display: flex; }
     .form-group.last { margin-bottom: 0; }
-    .form-group label { color: var(--text-color-regular); font-weight: 600; width: 64px; margin-right: 16px; }
+    .form-group label { color: var(--text-color-regular); font-weight: 600; width: 64px; margin-right: 16px; line-height:var(--input-height);}
     .form-group .radio-group label { display: inline-flex; align-items: center; margin-right: 20px; font-weight: normal; }
     .form-group .radio-group input { margin-right: 6px; }
 
@@ -110,17 +110,16 @@
 </head>
 <body>
   <div id="app" v-cloak>
-    <h1>AI Chat 设置 <button class="btn-primary" onclick="window.open('./index.html')">Chat对话</button></h1>
+    <h1>AI Chat 设置 
+      <div><button class="btn btn-primary" @click="saveSetting">保存</button><button class="btn-primary" onclick="window.open('./index.html')">Chat对话</button></div>
+    </h1>
 
-    <!-- <div class="provider-card">
+    <div class="provider-card">
         <div class="form-group last">
-            <label>系统主题</label>
-            <div class="radio-group">
-                <label><input type="radio" v-model="setting.darkMode" value="true"> 开启</label>
-                <label><input type="radio" v-model="setting.darkMode" value="false"> 关闭</label>
-            </div>
+            <label>代码折叠</label>
+            <div><input type="number" v-model.trim="config.codeLine" placeholder="代码超过此行数折叠"></div>
         </div>
-    </div> -->
+    </div>
 
     <div v-for="(provider, index) in setting.providers" :key="index" class="provider-card">
       <div class="provider-header">
@@ -181,6 +180,9 @@
           remoteModels: [],
           currProvider: null,
           isFetchingModels: false,
+          config: {
+            codeLine: localStorage.getItem("dai-codeLine") || ''
+          },
           setting: {
             providers: [
               { name: '阿里通义', url: "https://dashscope.aliyuncs.com/compatible-mode/v1", key: '', defaultModel: 'qwen2.5-1.5b-instruct',
@@ -256,6 +258,7 @@
         },
         saveSetting(){
           localStorage.setItem("dai-setting", JSON.stringify(this.setting));
+          localStorage.setItem("dai-codeLine", this.config.codeLine || '');
           alert("设置已成功保存！");
         },
         copySetting() {
