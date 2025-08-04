@@ -196,7 +196,7 @@
             if (pre.querySelector('.copy-code-btn')) return; // 避免重复添加
             appendNode(pre, 'button', '复制', 'copy-code-btn');
             appendNode(pre, 'button', '下载', 'down-code-btn');
-            if (codeEle.className == 'language-vue') codeEle.className == 'language-html';
+            if (codeEle.className == 'language-vue') codeEle.className = 'language-html';
             Prism.highlightElement(codeEle);
           });
           return template.innerHTML;
