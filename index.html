@@ -340,6 +340,7 @@
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let tokens = null
 
             while (true) {
               const { done, value } = await reader.read();
@@ -359,7 +360,9 @@
                   try {
                     const json = JSON.parse(data);
                     console.log(json);
-                    if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
+                    if (json.usage && json.usage.total_tokens && !tokens) {
+                      tokens = {prompt: json.usage.prompt_tokens, chat: json.usage.completion_tokens, total: json.usage.total_tokens }
+                    } else if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                       const delta = json.choices[0].delta.content;
                       reactiveAIMessage.content += delta;
                       this.scrollToBottom();
@@ -381,7 +384,7 @@
             this.isStreaming = false;
             this.abortController = null;
             // 模拟获取token消耗
-            reactiveAIMessage.tokenCount = reactiveAIMessage.content.length;
+            reactiveAIMessage.tokenCount = tokens ? `${tokens.total}(${tokens.prompt}+${tokens.chat})` : reactiveAIMessage.content.length;
             reactiveAIMessage.remark = provider.name + '(' + this.currModel + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's'
             this.scrollToBottom();
             if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
