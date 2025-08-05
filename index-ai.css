@@ -353,6 +353,7 @@ pre.over-code {
   line-height: 1.5;
   transition: all 0.2s ease-in-out;
   font-family: inherit;
+  max-height: 40dvh;
 }
 
 .chat-input:focus {
