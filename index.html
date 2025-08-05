@@ -323,7 +323,12 @@
               body: JSON.stringify({
                 model: this.currModel,
                 messages: this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content })),
-                stream: true
+                stream: true,
+                frequency_penalty: 0, // 文本的流畅性和完整性，即使它可能包含一些重复
+                presence_penalty: 0,
+                stream_options: {include_usage: true }, // 返回使用量
+                temperature: 0.6, // 0-2 越小随机性越小
+                top_p: 1,
               }),
               signal: this.abortController.signal,
             });
