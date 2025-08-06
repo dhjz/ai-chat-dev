@@ -15,14 +15,14 @@
   <div id="app" v-cloak>
     <div class="sidebar" :class="{ hidebar: !showSidebar }">
       <div class="side-setting">
-        <div class="theme-toggle" @click="toggleTheme">{{ isDarkMode ? '☀️' : '🌙' }}</div>
+        <div class="theme-toggle" @click="isDarkMode = !isDarkMode">{{ isDarkMode ? '🌙' : '☀️' }}</div>
         <div class="setting-icon" title="设置" @click="open('setting.html')">⚙️</div>
       </div>
       <div class="sidebar-header">
-        <select v-model="currProvider" @change="providerChange" placeholder="选择服务商">
+        <select v-model="config.provider" @change="providerChange" placeholder="选择服务商">
           <option v-for="provider in providers" :key="provider.name" :value="provider.name">{{ provider.name }}</option>
         </select>
-        <select v-model="currModel" @change="modelChange" placeholder="选择模型">
+        <select v-model="config.model" placeholder="选择模型">
           <option v-for="model in currModels" :key="model" :value="model">{{ model }}</option>
         </select>
         <select v-model="config.theme" @change="themeChange" placeholder="选择代码主题">
@@ -47,7 +47,7 @@
               <span>请求失败, 请打开调试窗口查看错误信息.</span>
               <button class="retry-btn" @click="retryLastMessage">重试</button>
             </div>
-            <div v-else class="prose" v-html="renderMarkdown(message.content)"></div>
+            <div v-else class="prose" :style="{ fontSize: (config.fontSize || 16) + 'px' }" v-html="renderMarkdown(message.content)"></div>
             <div v-if="isStreaming && index === currentChatMessages.length - 1" class="pulse-dots"><i></i><i></i><i></i></div>
             <div v-if="!message.isError" class="message-actions">
               <button v-show="message.content" class="action-btn" @click="e => copyToClipboard(message.content, e.target)">复制</button>
@@ -78,7 +78,7 @@
       </div>
     </div>
     <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
-      <div class="dialog-cont"><iframe :src="dialogHtml" frameborder="0"></iframe></div>
+      <div class="dialog-cont"><textarea  v-model="dialogCont"></textarea></div>
     </div>
   </div>
 
@@ -95,7 +95,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <!-- <script src="index.js"></script> -->
-  <script src="index.min.js"></script>
+  <script src="dist.min.js"></script>
 
   <script>
     localforage.setDriver([localforage.WEBSQL, localforage.INDEXEDDB])
@@ -115,10 +115,8 @@
         return {
           showSidebar: false,
           dialogShow: false,
-          dialogHtml: '',
+          dialogCont: '',
           providers: [],
-          currProvider: '',
-          currModel: '',
           userInput: '',
           chatHistory: [],
           currentChatId: null,
@@ -128,15 +126,19 @@
           useContext: localStorage.getItem('dai-useContext') === 'true',
           themes: themeList,
           config: {
+            provider: '',
+            model: '',
             theme: 'prism',
+            fontSize: 16,
             codeLine: 0,
-
+            temperature: 0.6,
+            top_p: 1,
           }
         };
       },
       computed: {
         currModels() {
-          return this.providers.find(x => x.name === this.currProvider)?.models.split(/、|,|，|\s+/).map(m => m.trim()).filter(m => m)
+          return this.providers.find(x => x.name === this.config.provider)?.models.split(/、|,|，|\s+/).map(m => m.trim()).filter(m => m)
            ?? [];
         },
         currentChat() {
@@ -148,10 +150,16 @@
       },
       watch: {
         isDarkMode(val) {
-          localforage.setItem('theme', val ? 'dark' : 'light');
+          localforage.setItem('isDarkMode', val);
           document.documentElement.className = val ? 'dark' : '';
           document.querySelector("#theme-link").href = !val ? this.getThemeLink(this.config.theme)
             : 'https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-vsc-dark-plus.min.css';
+        },
+        config: {
+          deep: true,
+          handler(val) {
+            this.$nextTick(() => localStorage.setItem('dai-config', JSON.stringify(val)));
+          }
         },
         useContext(val) {
           localStorage.setItem('dai-useContext', val);
@@ -202,16 +210,10 @@
           return template.innerHTML;
         },
         providerChange() {
-          localStorage.setItem('dai-currProvider', this.currProvider);
-          this.currModel = this.currModels[0] || '';
-          this.modelChange()
-        },
-        modelChange() {
-          localStorage.setItem('dai-currModel', this.currModel);
+          this.config.model = this.currModels[0] || '';
         },
         themeChange() {
           document.querySelector("#theme-link").href = this.getThemeLink(this.config.theme);
-          localStorage.setItem('dai-theme', this.config.theme);
         },
         getThemeLink(theme) {
           return theme.startsWith('t-') ? `https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/${theme.replace('t-', '')}.min.css`
@@ -290,11 +292,10 @@
         },
         async sendMessage() {
           if (!this.userInput.trim() || this.isStreaming) return;
-          console.log(this.providers, this.currProvider, this.currModel, this.userInput);
-          const provider = this.providers.find(p => p.name === this.currProvider);
+          const provider = this.providers.find(p => p.name === this.config.provider);
           if (!provider || !provider.url) return alert(`没有配置正确的服务商(${provider.name})url，无法发送请求。`);
           if (!provider.key) return alert('没有配置正确的key，无法发送请求。');
-          if (!this.currModel) return alert('请先选择模型。');
+          if (!this.config.model) return alert('请先选择模型。');
 
           const userMessage = { role: 'user', content: this.userInput.trim() };
           if (!this.currentChat) {
@@ -322,14 +323,14 @@
                 'Authorization': 'Bearer ' + provider.key
               },
               body: JSON.stringify({
-                model: this.currModel,
+                model: this.config.model,
                 messages: this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content })),
                 stream: true,
                 frequency_penalty: 0, // 文本的流畅性和完整性，即使它可能包含一些重复
                 presence_penalty: 0,
                 stream_options: {include_usage: true }, // 返回使用量
-                temperature: 0.6, // 0-2 越小随机性越小
-                top_p: 1,
+                temperature: this.config.temperature, // 0-2 越小随机性越小
+                top_p: this.config.top_p,
               }),
               signal: this.abortController.signal,
             });
@@ -385,7 +386,7 @@
             this.abortController = null;
             // 模拟获取token消耗
             reactiveAIMessage.tokenCount = tokens ? `${tokens.total}(${tokens.prompt}+${tokens.chat})` : reactiveAIMessage.content.length;
-            reactiveAIMessage.remark = provider.name + '(' + this.currModel + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's'
+            reactiveAIMessage.remark = provider.name + '(' + this.config.model + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's'
             this.scrollToBottom();
             if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
               this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
@@ -457,9 +458,6 @@
             }
           }
         },
-        toggleTheme() {
-          this.isDarkMode = !this.isDarkMode;
-        },
         async loadDataFromStorage() {
           let history = await localforage.getItem('chatHistory');
           if (history) {
@@ -473,20 +471,19 @@
           } else {
             this.createNewChat();
           }
-          const theme = await localforage.getItem('theme');
-          this.isDarkMode = theme === 'dark';
-          this.config.theme = localStorage.getItem('dai-theme') || 'prism';
-          if (!this.isDarkMode) {
-            this.themeChange()
+          this.isDarkMode = !!(await localforage.getItem('isDarkMode'));
+          this.config = {
+            ...this.config,
+            ...JSON.parse(localStorage.getItem('dai-config') || '{}')
           }
-          this.config.codeLine = localStorage.getItem("dai-codeLine") || 0;
+          if (!this.isDarkMode) this.themeChange()
           let settingStr = localStorage.getItem("dai-setting");
           if(settingStr) {
             const setting = JSON.parse(settingStr);
             if (setting.providers && setting.providers.length) {
               this.providers = setting.providers;
-              this.currProvider = localStorage.getItem("dai-currProvider") || this.providers[0].name;
-              this.currModel = localStorage.getItem("dai-currModel") || this.providers[0].defaultModel;
+              if (!this.config.provider) this.config.provider = setting.providers[0].name;
+              if (!this.config.model) this.config.model = setting.providers[0].defaultModel;
               return;
             }
           }
@@ -527,7 +524,7 @@
 
     function getFileExt(ele) {
       const extensionMap = {
-        js: 'js', javascript: 'js', ts: 'ts', typescript: 'ts', py: 'py', python: 'py', java: 'java', c: 'c', sql: 'sql', 
+        js: 'js', javascript: 'js', ts: 'ts', typescript: 'ts', py: 'py', python: 'py', java: 'java', c: 'c', sql: 'sql', vue: 'vue', 
         cpp: 'cpp', 'c++': 'cpp', cs: 'cs', csharp: 'cs',  go: 'go', php: 'php', ruby: 'rb', html: 'html', xml: 'xml', json: 'json',
         css: 'css', scss: 'scss', less: 'less', yml: 'yml', yaml: 'yaml', shell: 'sh', bash: 'sh', sh: 'sh', bat: 'bat', batch: 'bat',
       };
