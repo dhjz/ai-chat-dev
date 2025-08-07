@@ -53,9 +53,10 @@
     #app { max-width: 900px; margin: 0 auto; }
     h1 {font-size: 24px;color: var(--text-color-primary);margin-bottom: 10px; display: flex; justify-content: space-between;}
     
-    .form-group { margin-bottom: 10px; display: flex; }
+    .form-group { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
     .form-group.last { margin-bottom: 0; }
-    .form-group label { color: var(--text-color-regular); font-weight: 600; width: 64px; margin-right: 16px; line-height:var(--input-height);}
+    .form-group-item { display: flex; }
+    .form-group label { color: var(--text-color-regular); font-weight: 600; width: 66px; margin-right: 10px; line-height:var(--input-height); text-align: right;}
     .form-group .radio-group label { display: inline-flex; align-items: center; margin-right: 20px; font-weight: normal; }
     .form-group .radio-group input { margin-right: 6px; }
 
@@ -116,8 +117,22 @@
 
     <div class="provider-card">
         <div class="form-group last">
+          <div class="form-group-item">
+            <label>温度</label>
+            <div><input type="number" v-model.trim.number="config.temperature" min="0" max="2" step="0.1" placeholder="0-2"></div>
+          </div>
+          <div class="form-group-item">
+            <label>Top_p</label>
+            <div><input type="number" v-model.trim.number="config.top_p" min="0" max="1" step="0.1" placeholder="0-1"></div>
+          </div>
+          <div class="form-group-item">
+            <label>字体大小</label>
+            <div><input type="number" v-model.trim.number="config.fontSize" min="12" max="17" placeholder="12-17"></div>
+          </div>
+          <div class="form-group-item">
             <label>代码折叠</label>
             <div><input type="number" v-model.trim="config.codeLine" placeholder="代码超过此行数折叠"></div>
+          </div>
         </div>
     </div>
 
@@ -151,7 +166,7 @@
     </div>
 
     <div class="main-actions">
-        <button class="btn" @click="addProvider">+ 添加一个新的服务商</button>
+        <button class="btn" @click="addProvider">+ 添加服务商</button>
         <div>
           <button @click="impSetting">导入</button>
           <button @click="copySetting">复制</button>
@@ -181,7 +196,10 @@
           currProvider: null,
           isFetchingModels: false,
           config: {
-            codeLine: localStorage.getItem("dai-codeLine") || ''
+            codeLine: '',
+            fontSize: 16,
+            temperature: 0.6,
+            top_p: 1,
           },
           setting: {
             providers: [
@@ -198,6 +216,10 @@
           if(settingStr) {
               const savedSetting = JSON.parse(settingStr);
               this.setting = savedSetting; 
+          }
+          this.config = {
+            ...this.config,
+            ...JSON.parse(localStorage.getItem("dai-config" || '{}'))
           }
         } catch(e) {
           console.error("Failed to parse settings from localStorage", e);
@@ -258,7 +280,8 @@
         },
         saveSetting(){
           localStorage.setItem("dai-setting", JSON.stringify(this.setting));
-          localStorage.setItem("dai-codeLine", this.config.codeLine || '');
+          this.config.fontSize = this.config.fontSize > 17 ? 17 : this.config.fontSize < 12 ? 12 : this.config.fontSize;
+          localStorage.setItem("dai-config", JSON.stringify(this.config));
           alert("设置已成功保存！");
         },
         copySetting() {
@@ -284,7 +307,7 @@
       },
     })
     
-    app.mount('#app');
+    var vueApp = app.mount('#app');
 
     function genId() { return Date.now().toString(36) + Math.random().toString(36).substring(2, 7); }
 

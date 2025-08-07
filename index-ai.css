@@ -250,14 +250,15 @@ body {
 
 .message-wrapper .prose {
   max-width: max(800px, 46vw);
-  line-height: 1.6;
+  line-height: 1.7;
+  font-size: 16px;
 }
 
 .message-wrapper .prose p,
 .message-wrapper .prose ul,
 .message-wrapper .prose ol,
 .message-wrapper .prose pre {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4em;
 }
 
 .message-wrapper .prose pre {
@@ -353,6 +354,7 @@ pre.over-code {
   line-height: 1.5;
   transition: all 0.2s ease-in-out;
   font-family: inherit;
+  max-height: 40dvh;
 }
 
 .chat-input:focus {
