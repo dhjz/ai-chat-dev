@@ -194,16 +194,23 @@
           template.content.querySelectorAll('pre code').forEach((codeEle) => {
             const pre = codeEle.parentElement;
             pre.classList.add('line-numbers');
+            let codeLen = codeEle.textContent.split('\n').length
             if (codeEle.className.includes('html') && !pre.querySelector('.run-btn')) {
               appendNode(pre, 'button', '▶️运行', 'run-btn');
+              if (codeLen > 50 && !this.config.codeLine) {
+                appendNode(pre, 'button', '▶️运行', 'run-btn btn-btm');
+              }
             }
-            if (this.config.codeLine > 0 && codeEle.textContent.split('\n').length > this.config.codeLine) {
+            if (this.config.codeLine > 0 &&  codeLen > this.config.codeLine) {
               appendNode(pre, 'button', '展开', 'expand-btn');
               pre.classList.add('over-code');
             }
             if (pre.querySelector('.copy-code-btn')) return; // 避免重复添加
             appendNode(pre, 'button', '复制', 'copy-code-btn');
             appendNode(pre, 'button', '下载', 'down-code-btn');
+            if (codeLen > 50 && !this.config.codeLine) {
+              appendNode(pre, 'button', '复制', 'copy-code-btn btn-btm');
+            }
             if (codeEle.className == 'language-vue') codeEle.className = 'language-html';
             Prism.highlightElement(codeEle);
           });

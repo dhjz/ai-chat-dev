@@ -181,7 +181,7 @@ body {
 }
 .side-setting {
   position: fixed;
-  bottom: 2px;
+  bottom: 4px;
   left: 6px;
   font-size: 20px;
   color: var(--c-text-secondary);
@@ -289,6 +289,10 @@ body {
 }
 .run-btn {
   right: 70px;
+}
+.btn-btm {
+  top: auto;
+  bottom: 8px;
 }
 .expand-btn {
   top: auto;

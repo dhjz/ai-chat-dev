@@ -24,7 +24,7 @@
     input:not([type="radio"]), select {
       -webkit-appearance: none; background-color: #fff; border-radius: var(--input-radius);
       border: 1px solid var(--border-color); color: var(--text-color-primary); display: inline-block;
-      height: var(--input-height); line-height: var(--input-height); padding: 0 12px; width: 100%;
+      height: var(--input-height); line-height: var(--input-height); padding: 0 8px; width: 100%;
       transition: border-color 0.2s;
     }
     input:focus, select:focus { outline: none; border-color: var(--primary-color); }
@@ -33,6 +33,7 @@
       background-repeat: no-repeat; background-position: right 10px center; background-size: 1.2em;
       padding-right: 30px;
     }
+    input[type="number"] { max-width: 150px; }
     input:disabled { background-color: #f5f7fa; cursor: not-allowed; }
     button, .btn {
       display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; cursor: pointer;
@@ -55,7 +56,7 @@
     
     .form-group { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
     .form-group.last { margin-bottom: 0; }
-    .form-group-item { display: flex; }
+    .form-group-item { display: flex; gap: 4px;}
     .form-group label { color: var(--text-color-regular); font-weight: 600; width: 66px; margin-right: 10px; line-height:var(--input-height); text-align: right;}
     .form-group .radio-group label { display: inline-flex; align-items: center; margin-right: 20px; font-weight: normal; }
     .form-group .radio-group input { margin-right: 6px; }
@@ -116,7 +117,7 @@
     </h1>
 
     <div class="provider-card">
-        <div class="form-group last">
+        <div class="form-group">
           <div class="form-group-item">
             <label>温度</label>
             <div><input type="number" v-model.trim.number="config.temperature" min="0" max="2" step="0.1" placeholder="0-2"></div>
@@ -132,6 +133,13 @@
           <div class="form-group-item">
             <label>代码折叠</label>
             <div><input type="number" v-model.trim="config.codeLine" placeholder="代码超过此行数折叠"></div>
+          </div>
+        </div>
+        <div class="form-group last">
+          <div class="form-group-item">
+            <label>同步代码</label>
+            <div><input type="text" v-model.trim="config.syncCode" placeholder="英文字母大于3位"></div>
+            <button v-if="config.syncCode && config.syncCode.length > 3" @click="downConfig">下载</button>
           </div>
         </div>
     </div>
@@ -184,8 +192,9 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.17/vue.global.prod.min.js"></script>
-  <!-- <script src="index.js"></script> -->
-  <script src="index.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+  <script src="dist.js"></script>
+  <!-- <script src="dist.min.js"></script> -->
 
   <script>
     const app = Vue.createApp({
@@ -200,6 +209,7 @@
             fontSize: 16,
             temperature: 0.6,
             top_p: 1,
+            syncCode: '',
           },
           setting: {
             providers: [
@@ -278,11 +288,24 @@
             this.isFetchingModels = false;
           }
         },
-        saveSetting(){
+        async saveSetting(){
           localStorage.setItem("dai-setting", JSON.stringify(this.setting));
           this.config.fontSize = this.config.fontSize > 17 ? 17 : this.config.fontSize < 12 ? 12 : this.config.fontSize;
           localStorage.setItem("dai-config", JSON.stringify(this.config));
+          let code = this.config.syncCode
+          if (code) {
+            if (code.length < 4) return alert("请输入正确的同步码(至少4位英文或数字)！");
+            $bus.emit('uploadConfig', code, { config: this.config, setting: this.setting }, (res) => console.log(res))
+          }
           alert("设置已成功保存！");
+        },
+        downConfig() {
+          if (!this.config.syncCode || this.config.syncCode.length < 4) return alert("请先填写同步码(至少4位英文或数字)！");
+          $bus.emit('downloadConfig', this.config.syncCode, (res) => {
+            if (res.config) this.config = res.config
+            if (res.setting) this.setting = res.setting
+            console.log("设置已成功下载, 记得保存！");
+          })
         },
         copySetting() {
           navigator.clipboard.writeText(JSON.stringify(this.setting, null, 2)); 
