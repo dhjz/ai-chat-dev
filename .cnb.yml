@@ -1,27 +1,9 @@
-include:
-  # 构建、发布到 docker hub
-  - https://cnb.cool/cnb/cool/pipeline-templates/-/blob/main/hub.docker.com.yml
-  # pr 评审后自动合并
-  - https://cnb.cool/cnb/cool/pipeline-templates/-/blob/main/.pipeline-for-pr.yml
-
-# .cnb.yml
 $:
   vscode:
     - docker:
-        build:
-          dockerfile: Dockerfile
-          by:
-            - settings.json
-            - cnb-init-from
-            - cnb-init-from-without-lfs
-            - gitconfig
-            - scripts/add-zsh-plugins.sh
-            - scripts/set-zsh-env.sh
-
-      env:
-        CNB_WELCOME_CMD: echo "Welcome to CNB"
+        image: cnbcool/default-dev-env:latest
       runner:
-       cpus: 1
+        cpus: 1
       services:
         - vscode
         - docker
