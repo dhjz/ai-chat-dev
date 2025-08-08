@@ -51,7 +51,7 @@
     .btn-danger:hover { background-color: #f78989; border-color: #f78989; }
     .btn-small { height: 28px; padding: 0 8px; font-size: 12px; }
     
-    #app { max-width: 900px; margin: 0 auto; }
+    #app { max-width: 900px; margin: 0 auto; padding-bottom: 40px;}
     h1 {font-size: 24px;color: var(--text-color-primary);margin-bottom: 10px; display: flex; justify-content: space-between;}
     
     .form-group { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -138,7 +138,7 @@
         <div class="form-group last">
           <div class="form-group-item">
             <label>同步代码</label>
-            <div><input type="text" v-model.trim="config.syncCode" placeholder="英文字母大于3位"></div>
+            <div><input type="text" v-model.trim="config.syncCode" placeholder="英文或数字大于3位"></div>
             <button v-if="config.syncCode && config.syncCode.length > 3" @click="downConfig">下载</button>
           </div>
         </div>
