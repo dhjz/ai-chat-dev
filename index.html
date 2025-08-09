@@ -16,7 +16,8 @@
     <div class="sidebar" :class="{ hidebar: !showSidebar }">
       <div class="side-setting">
         <div class="theme-toggle" @click="isDarkMode = !isDarkMode">{{ isDarkMode ? '🌙' : '☀️' }}</div>
-        <div class="setting-icon" title="设置" @click="open('setting.html')">⚙️</div>
+        <div class="setting-icon" title="设置" onclick="location.href = './setting.html'">⚙️</div>
+        <div class="setting-icon" v-show="chatSyncCode" :class="{ rotating: syncing }" title="手动上传聊天记录" @click="syncChat">♻</div>
       </div>
       <div class="sidebar-header">
         <select v-model="config.provider" @change="providerChange" placeholder="选择服务商">
@@ -33,7 +34,7 @@
       <div class="history">
         <div v-for="(chat, index) in chatHistory" :key="chat.id" class="history-item"
           :class="{ active: chat.id === currentChatId }" @click="selectChat(chat.id)">
-          <span class="history-item-title">{{ chat.title }}</span>
+          <span class="history-item-title" :title="chat.title">{{ chat.title }}</span>
           <button @click.stop="deleteChat(chat.id)" class="delete-chat">×</button>
         </div>
       </div>
@@ -74,7 +75,7 @@
     </div>
     <div class="chat-nav">
       <div class="nav-item" v-for="(message, ind) in currentChatMessages" :key="ind" @click="selectChat(currentChatId)">
-          <span v-if="message.role === 'user'" @click="scrollToChat(ind)"><i>➤</i>{{ message.content }}</span>
+          <span v-if="message.role === 'user'" @click="scrollToChat(ind)" :title="message.content"><i>➤</i>{{ message.content }}</span>
       </div>
     </div>
     <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
@@ -125,6 +126,8 @@
           abortController: null,
           useContext: localStorage.getItem('dai-useContext') === 'true',
           themes: themeList,
+          chatChanged: false,
+          syncing: false,
           config: {
             provider: '',
             model: '',
@@ -146,6 +149,9 @@
         },
         currentChatMessages() {
           return this.currentChat ? this.currentChat.messages : [];
+        },
+        chatSyncCode() {
+          return this.config.syncCode && this.config.syncCode.length > 3 ? `chat_${this.config.syncCode}`: '';
         }
       },
       watch: {
@@ -181,11 +187,6 @@
       },
       methods: {
         open(url) { window.open(url) },
-        saveHistory() {
-            let data = zipStr8(JSON.stringify(this.chatHistory));
-            console.log(`save chatHistory, length: ${data.length}, size: ${(data.length / 1024).toFixed(2)}kb`);
-            localforage.setItem('chatHistory', data);
-        },
         renderMarkdown(content) {
           const rawHtml = marked.parse(content);
           const template = document.createElement('template');
@@ -483,6 +484,7 @@
             ...this.config,
             ...JSON.parse(localStorage.getItem('dai-config') || '{}')
           }
+          this.initSyncChat()
           if (!this.isDarkMode) this.themeChange()
           let settingStr = localStorage.getItem("dai-setting");
           if(settingStr) {
@@ -495,8 +497,35 @@
             }
           }
           if (confirm('您还没有配置任何服务商, 是否前往配置?')) {
-            window.open('./setting.html')
+            location.href = '/setting.html';
           }
+        },
+        saveHistory() {
+          let data = zipStr8(JSON.stringify(this.chatHistory));
+          console.log(`save chatHistory, length: ${data.length}, size: ${(data.length / 1024).toFixed(2)}kb`);
+          localforage.setItem('chatHistory', data);
+          this.chatChanged = true
+        },
+        initSyncChat() {
+          if (!this.chatSyncCode) return;
+          $bus.emit('downloadConfig', this.chatSyncCode, (res) => {
+            console.log('下载的对话:', res);
+            if (res && res.length) {
+              this.chatHistory = res
+              this.currentChatId = this.chatHistory[0].id;
+            }
+          })
+          setInterval(() => this.chatChanged && this.syncChat(), 20 * 1000) // 20秒同步一次对话
+        },
+        syncChat() {
+          console.log('开始自动同步聊天记录...');
+          if (!this.chatSyncCode) return;
+          this.syncing = true
+          setTimeout(() => this.syncing = false, 1500)
+          $bus.emit('uploadConfig', this.chatSyncCode, this.chatHistory, (res) => {
+            console.log(res);
+            this.chatChanged = false;
+          })
         }
       },
     });

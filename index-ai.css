@@ -186,6 +186,7 @@ body {
   font-size: 20px;
   color: var(--c-text-secondary);
   display: flex;
+  gap: 6px;
 }
 .theme-toggle {
   cursor: pointer;
@@ -198,7 +199,6 @@ body {
 }
 .setting-icon {
   cursor: pointer;
-  margin-left: 10px;
 }
 
 .chat-messages {
@@ -545,6 +545,16 @@ tr:nth-child(even) {
     40%{transform:scale(1);opacity:1}
 }
 
+
+.rotating {
+  animation: rotate 1.5s infinite;
+  transform-origin: center center;
+}
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .message-wrapper p code:not(pre code), .message-wrapper ul code:not(pre code), .message-wrapper ol code:not(pre code) {
     padding: 0.2em 0.4em;
     vertical-align: middle;
@@ -564,6 +574,15 @@ code[class*=language-], pre[class*=language-] {
 }
 .message-wrapper .token.operator {
   background: none !important;
+}
+
+@media screen and (min-width: 1590px) {
+  .chat-nav {
+    width: 280px;
+  }
+  .message-wrapper .prose {
+    max-width: max(900px, 49vw);
+  }
 }
 
 @media screen and (max-width: 770px) {

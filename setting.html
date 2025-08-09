@@ -113,7 +113,7 @@
 <body>
   <div id="app" v-cloak>
     <h1>AI Chat 设置 
-      <div><button class="btn btn-primary" @click="saveSetting">保存</button><button class="btn-primary" onclick="window.open('./index.html')">Chat对话</button></div>
+      <div><button class="btn btn-primary" @click="saveSetting">保存</button><button class="btn-primary" onclick="location.href = './index.html'">Chat对话</button></div>
     </h1>
 
     <div class="provider-card">
@@ -177,6 +177,7 @@
         <button class="btn" @click="addProvider">+ 添加服务商</button>
         <div>
           <button @click="impSetting">导入</button>
+          <button @click="pastSetting">粘贴</button>
           <button @click="copySetting">复制</button>
           <button @click="expSetting">导出</button>
           <button class="btn btn-primary" @click="saveSetting">保存</button>
@@ -231,6 +232,7 @@
             ...this.config,
             ...JSON.parse(localStorage.getItem("dai-config" || '{}'))
           }
+          if (this.config.syncCode && this.config.syncCode.length > 3) this.downConfig()
         } catch(e) {
           console.error("Failed to parse settings from localStorage", e);
         }
@@ -304,7 +306,7 @@
           $bus.emit('downloadConfig', this.config.syncCode, (res) => {
             if (res.config) this.config = res.config
             if (res.setting) this.setting = res.setting
-            console.log("设置已成功下载, 记得保存！");
+            console.log("设置已成功下载！");
           })
         },
         copySetting() {
@@ -326,6 +328,16 @@
               this.setting = data;
             }
           })
+        },
+        pastSetting() {
+          let val = window.prompt("请粘贴设置:", "")
+          try {
+            val = JSON.parse(val);
+            if (!val || !val.providers) return alert('文件格式不符合要求: { "providers": []}');
+            if (confirm(`确定要导入吗？(共 ${val.providers.length} 个服务商)`)) {
+              this.setting = val;
+            }
+          } catch (e) { alert('文件格式不符合要求: { "providers": []}') }
         }
       },
     })
