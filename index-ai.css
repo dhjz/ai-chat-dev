@@ -627,9 +627,9 @@ code[class*=language-], pre[class*=language-] {
     font-size: 14px;
   }
   .send-btn {
-    font-size: 18px;
-    width: 30px;
-    height: 30px;
+    font-size: 17px;
+    width: 26px;
+    height: 26px;
     margin-right: -4px;
   }
 }
