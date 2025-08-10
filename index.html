@@ -16,7 +16,7 @@
       <div class="side-setting">
         <div class="theme-toggle" @click="isDarkMode = !isDarkMode">{{ isDarkMode ? '🌙' : '☀️' }}</div>
         <div class="setting-icon" title="设置" onclick="location.href = './setting.html'">⚙️</div>
-        <div class="setting-icon icon-ai" title="其他AI网站" onclick="location.href = './ai.html'">🌏</div>
+        <div class="setting-icon icon-ai" title="其他AI网站" onclick="window.open('./ai.html')">🌏</div>
         <div class="setting-icon" v-show="chatSyncCode" :class="{ rotating: syncing }" title="手动上传聊天记录" @click="syncChat">♻</div>
       </div>
       <div class="sidebar-header">
