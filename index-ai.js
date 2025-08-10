@@ -390,7 +390,7 @@ window.vueApp = Vue.createApp({
         }
       }
       if (confirm('您还没有配置任何服务商, 是否前往配置?')) {
-        location.href = '/setting.html';
+        location.href = './setting.html';
       }
     },
     saveHistory() {
