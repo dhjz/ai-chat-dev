@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>run-code</title>
+  <title>代码在线运行</title>
+  <style>
+    .run-code-btn { position: fixed;top: 5px;right: 5px;background: #fff;font-size: 12px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;color: #333;border-radius: 4px;opacity: 0.8; cursor: pointer; }
+    .run-code-btn-1 { top: 34px; }
+  </style>
 </head>
 <body>
   <script>
@@ -15,12 +19,12 @@
        setTimeout(() => {
         const downBtn = document.createElement('button');
         downBtn.innerText = '下载Html';
-        downBtn.style = 'position: fixed;top: 5px;right: 5px;background: #fff;font-size: 12px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;color: #333;border-radius: 4px;opacity: 0.8;';
+        downBtn.className = 'run-code-btn';
         downBtn.onclick = () => downloadText(html, 'index.html')
         document.body.append(downBtn);
         const copyBtn = document.createElement('button');
         copyBtn.innerText = '复制Html';
-        copyBtn.style = 'position: fixed;top: 34px;right: 5px;background: #fff;font-size: 12px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;color: #333;border-radius: 4px;opacity: 0.8;';
+        copyBtn.className = 'run-code-btn run-code-btn-1';
         copyBtn.onclick = () => navigator.clipboard.writeText(html)
         document.body.append(copyBtn);
        }, 500)

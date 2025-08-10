@@ -17,6 +17,7 @@
       <div class="side-setting">
         <div class="theme-toggle" @click="isDarkMode = !isDarkMode">{{ isDarkMode ? '🌙' : '☀️' }}</div>
         <div class="setting-icon" title="设置" onclick="location.href = './setting.html'">⚙️</div>
+        <div class="setting-icon icon-ai" title="其他AI网站" onclick="location.href = './ai.html'">🌼</div>
         <div class="setting-icon" v-show="chatSyncCode" :class="{ rotating: syncing }" title="手动上传聊天记录" @click="syncChat">♻</div>
       </div>
       <div class="sidebar-header">
@@ -48,7 +49,11 @@
               <span>请求失败, 请打开调试窗口查看错误信息.</span>
               <button class="retry-btn" @click="retryLastMessage">重试</button>
             </div>
-            <div v-else class="prose" :style="{ fontSize: (config.fontSize || 16) + 'px' }" v-html="renderMarkdown(message.content)"></div>
+            <div v-else 
+              class="prose" 
+              :class="[message.role, 'msg_' + (message.id || 'm')]" 
+              :style="{ fontSize: (config.fontSize || 16) + 'px' }" 
+              v-html="renderMarkdown(message.content, message.role === 'user')"></div>
             <div v-if="isStreaming && index === currentChatMessages.length - 1" class="pulse-dots"><i></i><i></i><i></i></div>
             <div v-if="!message.isError" class="message-actions">
               <button v-show="message.content" class="action-btn" @click="e => copyToClipboard(message.content, e.target)">复制</button>
@@ -69,13 +74,17 @@
           <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
           <button v-if="isStreaming" class="stop-btn" @click="stopStream">■</button>
         </div>
-        <div id="to-top" @click="scrollToBottom" @dblclick="goTop" title="双击回顶部">⇩</div>
+        <div class="to-top auto-scroll" :class="{ opacity: autoScroll }" @click="autoScroll = !autoScroll" title="解除自动滚动底部">⇅</div>
+        <div class="to-top" @click="scrollToBottom(true)" @dblclick="goTop" title="单击到底部, 双击回顶部">⇩</div>
       </div>
       <div class="toggle-side" @click.stop="showSidebar = !showSidebar">📰</div>
     </div>
     <div class="chat-nav">
-      <div class="nav-item" v-for="(message, ind) in currentChatMessages" :key="ind" @click="selectChat(currentChatId)">
+      <div class="nav-item line1" v-for="(message, ind) in currentChatMessages" :key="ind">
           <span v-if="message.role === 'user'" @click="scrollToChat(ind)" :title="message.content"><i>➤</i>{{ message.content }}</span>
+          <span v-if="message.role !== 'user' && message.dir && message.dir.length">
+            <b v-for="(d, din) in message.dir" @click="scrollToChatDir(message, d)" :title="d.c" :key="din" class="line1"><i>➤</i>{{ d.c }}</b>
+          </span>
       </div>
     </div>
     <div class="dialog" v-show="dialogShow" @click.self="dialogShow = false">
@@ -116,6 +125,7 @@
         return {
           showSidebar: false,
           dialogShow: false,
+          autoScroll: true,
           dialogCont: '',
           providers: [],
           userInput: '',
@@ -187,7 +197,8 @@
       },
       methods: {
         open(url) { window.open(url) },
-        renderMarkdown(content) {
+        renderMarkdown(content, notRender) {
+          if (notRender) return content;
           const rawHtml = marked.parse(content);
           const template = document.createElement('template');
           template.innerHTML = rawHtml.trim();
@@ -274,7 +285,13 @@
         scrollToChat(ind) {
           document.querySelector('#curr-chat-' + ind)?.scrollIntoView({ behavior: 'smooth' });
         },
-        scrollToBottom() {
+        scrollToChatDir(msg, d) {
+          let ind = msg.dir.filter(x => d.h ? d.h == x.h : d.c == x.c).indexOf(d);
+          let cls = d.h ? d.h : `.language-${d.c}`
+          document.querySelectorAll(`.msg_${msg.id} ${cls}`)[ind]?.scrollIntoView({ behavior: 'smooth' });
+        },
+        scrollToBottom(isForce) {
+          if (!isForce && !this.autoScroll) return
           nextTick(() => {
             const chatMessages = this.$refs.chatMessages;
             if (chatMessages) {
@@ -313,7 +330,7 @@
           this.userInput = '';
           this.scrollToBottom();
 
-          const aiMessage = { role: 'assistant', content: '', remark: '', tokenCount: 0, isError: false };
+          const aiMessage = { id: Math.random().toString(32).slice(-4), role: 'assistant', content: '', remark: '', tokenCount: 0, dir: null, isError: false };
           this.currentChat.messages.push(aiMessage);
           const reactiveAIMessage = this.currentChat.messages[this.currentChat.messages.length - 1];
 
@@ -394,7 +411,8 @@
             this.abortController = null;
             // 模拟获取token消耗
             reactiveAIMessage.tokenCount = tokens ? `${tokens.total}(${tokens.prompt}+${tokens.chat})` : reactiveAIMessage.content.length;
-            reactiveAIMessage.remark = provider.name + '(' + this.config.model + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's'
+            reactiveAIMessage.remark = provider.name + '(' + this.config.model + '), ' + ((Date.now() - startTime) / 1000).toFixed(0) + 's';
+            reactiveAIMessage.dir = listHtmlDir(document.querySelector(`.msg_${reactiveAIMessage.id}`))
             this.scrollToBottom();
             if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
               this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
@@ -403,9 +421,7 @@
           }
         },
         stopStream() {
-          if (this.abortController) {
-            this.abortController.abort();
-          }
+          this.abortController && this.abortController.abort()
         },
         retryLastMessage() {
           const lastMessageIndex = this.currentChat.messages.length - 1;
@@ -429,10 +445,7 @@
               buttonElement.innerText = '已复制';
               setTimeout(() => { buttonElement.innerText = originalText }, 2000);
             }
-          }).catch(err => {
-            console.error('无法复制文本: ', err);
-            alert('复制失败!');
-          });
+          }).catch(err => alert('复制失败!'));
         },
         createNewChat() {
           const newChat = {
@@ -569,6 +582,19 @@
       if (!cls) return '';
       const lang = cls.substring('language-'.length).toLowerCase();
       return '.' + (extensionMap[lang] || lang);
+    }
+
+    function listHtmlDir(ele) {
+      if (!ele) return null;
+      const tempEl = typeof ele === 'string' ? new DOMParser().parseFromString(ele) : ele
+      const result = [];
+      tempEl.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((h) => result.push({h: h.tagName, c: h.textContent}));
+      if (result.length) return result; // 如果有标题，则返回标题, 不然找代码块
+      tempEl.querySelectorAll('pre code').forEach(codeBlock => {
+        const langClass = [...codeBlock.classList].find(cls => cls.startsWith('language-'));
+        langClass && result.push({c: `${langClass.replace('language-', '')}` });
+      });   
+      return result;
     }
 
   </script>

@@ -58,7 +58,7 @@ body {
 }
 .dialog { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; z-index: 9999; background: rgba(0, 0, 0, 0.5); text-align: center; display: flex; align-items: center; justify-content: center; flex-direction: column; }
 .dialog-cont { min-width: 40vw; max-width: min(1400px, 90vw); min-height: 40vh; max-height: 92vh; overflow: auto;  background: #fff; border-radius: 12px; padding: 10px; }
-    
+.line1 { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }    
 
 #app {
   display: flex;
@@ -253,6 +253,12 @@ body {
   line-height: 1.7;
   font-size: 16px;
 }
+.message-wrapper .prose.user {
+  max-height: 300px;
+  line-height: 1.4;
+  overflow: auto;
+  white-space: pre-wrap; 
+}
 
 .message-wrapper .prose p,
 .message-wrapper .prose ul,
@@ -446,12 +452,12 @@ pre.over-code {
   left: 8px;
   top: 8px;
 }
-#to-top {
+.to-top {
   position: absolute;
   top: -42px;
   right: 12px;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -465,6 +471,14 @@ pre.over-code {
   user-select: none;
   font-weight: bold;
 }
+.to-top.auto-scroll {
+  top: -82px;
+  opacity: .3;
+}
+.to-top.auto-scroll.opacity {
+  opacity: .8;
+}
+
 
 ::-webkit-scrollbar {
   width: 12px;
@@ -523,9 +537,6 @@ tr:nth-child(even) {
   margin-left: 10px;
 }
 .nav-item {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 13px;
   margin-bottom: 2px;
   cursor: pointer;
@@ -533,6 +544,16 @@ tr:nth-child(even) {
 .nav-item i {
   color: #409eff;
   margin-right: 4px;
+}
+.nav-item b {
+  font-weight: normal;
+  margin-left: 10px;
+  display: block;
+  line-height: 1.3;
+  font-size: 0.8em;
+}
+.nav-item b i {
+  color: #b4dda0;
 }
 
 /* loading animation */
