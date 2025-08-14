@@ -417,6 +417,7 @@ window.vueApp = Vue.createApp({
       setTimeout(() => this.syncing = false, 1500)
       $bus.emit('uploadConfig', this.chatSyncCode, this.chatHistory, (res) => {
         console.log(res);
+        dnotify(res)
         this.chatChanged = false;
       })
     }
@@ -473,4 +474,15 @@ function listHtmlDir(ele) {
     langClass && result.push({c: `${langClass.replace('language-', '')}` });
   });   
   return result;
+}
+
+window.dnotifyTimer = null; window.dnotifyEl = document.body.appendChild(Object.assign(document.createElement('div'), { 
+  id: 'dnotify', style: `display:none; min-width: 260px;max-width: 40%; padding: 10px; box-sizing: border-box; border: 1px solid #ebeef5; text-align: center; color:#333;
+    position: fixed; background-color: #fff; top:16px;right:16px;z-index: 9999999; font-size: 14px;line-height: 1.4; border-radius: 8px; box-shadow: 0 2px 12px 0 rgba(0,0,0,.1); `
+}));
+function dnotify(txt, time) {
+  dnotifyEl.style.display = 'block';
+  dnotifyEl.innerHTML = txt;
+  clearTimeout(dnotifyTimer);
+  dnotifyTimer = setTimeout(() => dnotifyEl.style.display = 'none', (time || 2) * 1000);
 }
