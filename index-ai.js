@@ -219,7 +219,7 @@ window.vueApp = Vue.createApp({
       this.saveHistory()
       const startTime = Date.now();
       let tokens = null;
-
+      document.title = 'AI 对话中...'
       try {
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
@@ -287,6 +287,7 @@ window.vueApp = Vue.createApp({
           reactiveAIMessage.content = `请求失败: ${error.message}`;
         }
       } finally {
+        document.title = 'AI 对话'
         this.isStreaming = false;
         this.abortController = null;
         // 模拟获取token消耗
