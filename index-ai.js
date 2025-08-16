@@ -260,11 +260,11 @@ window.vueApp = Vue.createApp({
             if (line.startsWith('data: ')) {
               const data = line.substring(6);
               console.log(data);
-              if (data.trim() === '[DONE]') {
+              if (data.trim() === '[DONE]' || data.trim() === '[done]') {
                 return;
               }
               try {
-                const json = JSON.parse(data);
+                const json = JSON.parse(data);1
                 console.log(json);
                 if (json.usage && json.usage.total_tokens && !tokens) {
                   tokens = {prompt: json.usage.prompt_tokens, chat: json.usage.completion_tokens, total: json.usage.total_tokens }
