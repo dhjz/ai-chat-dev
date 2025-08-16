@@ -33,8 +33,8 @@
       </div>
       <div class="history">
         <div v-for="(chat, index) in chatHistory" :key="chat.id" class="history-item"
-          :class="{ active: chat.id === currentChatId }" @click="selectChat(chat.id)">
-          <span class="history-item-title" :title="chat.title">{{ chat.title }}</span>
+          :class="{ active: chat.id === currentChatId }" @click="selectChat(chat.id)" @dblclick="renameChat(chat)">
+          <a class="history-item-title" href="javascript:void(0);" :title="chat.title">{{ chat.title }}</a>
           <button @click.stop="deleteChat(chat.id)" class="delete-chat">×</button>
         </div>
       </div>

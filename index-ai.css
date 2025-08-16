@@ -5,6 +5,7 @@
   padding: 0;
 }
 [v-cloak] { display: none !important; }
+a { text-decoration: none; color: inherit; }
 :root {
   --c-bg: #ffffff;
   --c-fg: #1a1a1a;

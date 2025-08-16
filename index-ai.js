@@ -340,6 +340,13 @@ window.vueApp = Vue.createApp({
     selectChat(chatId) {
       this.currentChatId = chatId;
     },
+    renameChat(chat) {
+      const newTitle = prompt('请输入新的会话名称：', chat.title);
+      if (newTitle && newTitle.trim()) {
+        chat.title = newTitle.trim();
+        this.saveHistory()
+      }
+    },
     deleteChat(chatId) {
       const chatIndex = this.chatHistory.findIndex(chat => chat.id === chatId);
       if (chatIndex === -1) return;
