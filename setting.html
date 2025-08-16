@@ -297,16 +297,17 @@
           let code = this.config.syncCode
           if (code) {
             if (code.length < 4) return alert("请输入正确的同步码(至少4位英文或数字)！");
-            $bus.emit('uploadConfig', code, { config: this.config, setting: this.setting }, (res) => console.log(res))
+            $bus.emit('uploadConfig', code, { config: this.config, setting: this.setting }, (res) => dnotify(res))
+          } else {
+            dnotify("设置已成功保存！");
           }
-          alert("设置已成功保存！");
         },
         downConfig() {
           if (!this.config.syncCode || this.config.syncCode.length < 4) return alert("请先填写同步码(至少4位英文或数字)！");
           $bus.emit('downloadConfig', this.config.syncCode, (res) => {
             if (res.config) this.config = res.config
             if (res.setting) this.setting = res.setting
-            console.log("设置已成功下载！");
+            dnotify("设置已成功下载！");
           })
         },
         copySetting() {
@@ -372,6 +373,17 @@
         }
         inputEl.click()
       })
+    }
+
+    window.dnotifyTimer = null; window.dnotifyEl = document.body.appendChild(Object.assign(document.createElement('div'), { 
+      id: 'dnotify', style: `display:none; min-width: 260px;max-width: 40%; padding: 10px; box-sizing: border-box; border: 1px solid #ebeef5; text-align: center; color:#333;
+        position: fixed; background-color: #fff; top:16px;right:16px;z-index: 9999999; font-size: 14px;line-height: 1.4; border-radius: 8px; box-shadow: 0 2px 12px 0 rgba(0,0,0,.1); `
+    }));
+    function dnotify(txt, time) {
+      dnotifyEl.style.display = 'block';
+      dnotifyEl.innerHTML = txt;
+      clearTimeout(dnotifyTimer);
+      dnotifyTimer = setTimeout(() => dnotifyEl.style.display = 'none', (time || 2) * 1000);
     }
   </script>
 </body>
