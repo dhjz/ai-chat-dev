@@ -264,7 +264,7 @@ window.vueApp = Vue.createApp({
                 return;
               }
               try {
-                const json = JSON.parse(data);1
+                const json = JSON.parse(data);
                 console.log(json);
                 if (json.usage && json.usage.total_tokens && !tokens) {
                   tokens = {prompt: json.usage.prompt_tokens, chat: json.usage.completion_tokens, total: json.usage.total_tokens }
