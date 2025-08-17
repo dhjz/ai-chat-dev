@@ -11,6 +11,7 @@ window.vueApp = Vue.createApp({
       autoScroll: true,
       dialogCont: '',
       providers: [],
+      prompts: [],
       userInput: '',
       chatHistory: [],
       currentChatId: null,
@@ -24,6 +25,7 @@ window.vueApp = Vue.createApp({
       config: {
         provider: '',
         model: '',
+        prompt: '',
         theme: 'prism',
         fontSize: 16,
         codeLine: 0,
@@ -39,6 +41,9 @@ window.vueApp = Vue.createApp({
     },
     currentChat() {
       return this.chatHistory.find(chat => chat.id === this.currentChatId);
+    },
+    currentSysPrompt() {
+      return this.prompts.find(x => x.id == this.config.prompt)?.prompt || '';
     },
     currentChatMessages() {
       return this.currentChat ? this.currentChat.messages : [];
@@ -221,6 +226,7 @@ window.vueApp = Vue.createApp({
       let tokens = null;
       document.title = 'AI 对话中...'
       try {
+        let sysMessage = this.currentSysPrompt ? [{ role: 'system', content: this.currentSysPrompt }] : []
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
           headers: {
@@ -229,7 +235,7 @@ window.vueApp = Vue.createApp({
           },
           body: JSON.stringify({
             model: this.config.model,
-            messages: this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content })),
+            messages: sysMessage.concat(this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content }))),
             stream: true,
             frequency_penalty: 0, // 文本的流畅性和完整性，即使它可能包含一些重复
             presence_penalty: 0,
@@ -390,6 +396,9 @@ window.vueApp = Vue.createApp({
       let settingStr = localStorage.getItem("dai-setting");
       if(settingStr) {
         const setting = JSON.parse(settingStr);
+        if (setting.prompts && setting.prompts.length) {
+          this.prompts = setting.prompts;
+        }
         if (setting.providers && setting.providers.length) {
           this.providers = setting.providers;
           if (!this.config.provider) this.config.provider = setting.providers[0].name;

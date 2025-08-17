@@ -61,47 +61,23 @@
     .form-group .radio-group label { display: inline-flex; align-items: center; margin-right: 20px; font-weight: normal; }
     .form-group .radio-group input { margin-right: 6px; }
 
-    .provider-card {
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: var(--card-radius);
-      padding: 12px 16px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
-    }
-    .provider-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 9px;
-      border-bottom: 1px solid #e4e7ed;
-    }
+    .provider-card{ background: #fff; border: 1px solid var(--border-color); border-radius: var(--card-radius); padding: 12px 16px; 
+      margin-bottom: 10px; box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);}
+    .provider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 1px solid #e4e7ed;}
     .provider-header h2 { font-size: 18px; color: var(--text-color-primary); }
 
-    .provider-form-grid {
-      display: grid;
-      grid-template-columns: 64px 1fr 64px 1fr; 
-      gap: 6px 10px;
-      align-items: center;
-    }
-    .provider-form-grid > label {
-      font-weight: 600; color: var(--text-color-regular); text-align: right;
-    }
+    .provider-form-grid{ display: grid; grid-template-columns: 64px 1fr 64px 1fr; gap: 6px 10px; align-items: center;}
+    .provider-form-grid >label{ font-weight: 600; color: var(--text-color-regular); text-align: right;}
     .grid-col-span-3 { grid-column: 2 / 5; }
+    .provider-form-flex { display: flex; gap: 6px; margin-bottom: 6px; }
+    .form-label { width: 100px; }
+    .form-right { flex: 1; display: flex; gap: 6px; }
     
     .input-with-button { display: flex; gap: 8px; }
 
     /* Main Actions */
-    .main-actions {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: #fff;
-      border-radius: var(--card-radius);
-      border: 1px solid var(--border-color);
-      margin-top: 10px;
-    }
+    .main-actions{ display: flex; justify-content: space-between; padding: 12px 14px; background: #fff; border-radius: var(--card-radius); 
+      border: 1px solid var(--border-color); margin-top: 10px;}
     @media screen and (max-width: 450px) {
       body { font-size: 13px; }
       input, select, button { font-size: 12px; }
@@ -142,6 +118,25 @@
             <button v-if="config.syncCode && config.syncCode.length > 3" @click="downConfig">下载</button>
           </div>
         </div>
+    </div>
+
+    <div class="provider-card">
+      <div class="provider-header">
+        <h2>系统助手</h2>
+        <div>
+          <button class="btn btn-small" @click="addPrompt">添加</button>
+        </div>
+      </div>
+
+      <template v-if="setting.prompts && setting.prompts.length">
+        <div class="provider-form-flex" v-for="(item, ind) in setting.prompts" :key="item.id">
+          <div class="form-label"><input class="form-label" type="text" v-model.trim="item.name" placeholder="助手名称"></div>
+          <div class="form-right">
+            <input type="text" v-model.trim="item.prompt" placeholder="系统提示词">
+            <button class="btn btn-danger btn-small" @click="delPrompt(item, ind)" >删除</button>
+          </div>
+        </div>
+      </template>
     </div>
 
     <div v-for="(provider, index) in setting.providers" :key="index" class="provider-card">
@@ -217,6 +212,9 @@
               { name: '阿里通义', url: "https://dashscope.aliyuncs.com/compatible-mode/v1", key: '', defaultModel: 'qwen2.5-1.5b-instruct',
                 models: 'qwen2.5-1.5b-instruct、qwen2.5-0.5b-instruct、qwen2-1.5b-instruct、qwen1.5-1.8b-chat、qwen2.5-coder-3b-instruct'}
             ],
+            prompts:[
+              { id: 1, name: 'HTML助手', prompt: '' },
+            ]
             // darkMode: 'true',
           }
         }
@@ -226,7 +224,8 @@
           let settingStr = localStorage.getItem("dai-setting");
           if(settingStr) {
               const savedSetting = JSON.parse(settingStr);
-              this.setting = savedSetting; 
+              this.setting = { ...this.setting, ...savedSetting}; 
+              console.log(this.setting);
           }
           this.config = {
             ...this.config,
@@ -251,6 +250,14 @@
             if (confirm(`确定要删除服务商 #${index + 1} (${this.setting.providers[index].name || '未命名'}) 吗？`)) {
                 this.setting.providers.splice(index, 1);
             }
+        },
+        addPrompt() {
+          this.setting.prompts.push({ id: genId(), name: '', prompt: ''});
+        },
+        delPrompt(item, ind) {
+          if (confirm(`确定要删除助手 (${item.name || '未命名'}) 吗？`)) {
+            this.setting.prompts.splice(ind, 1);
+          }
         },
         checkUrl(provider) {
             if (provider.url && provider.url.trim().endsWith('/chat/completions')) provider.url = provider.url.slice(0, -17).trim();
@@ -306,7 +313,7 @@
           if (!this.config.syncCode || this.config.syncCode.length < 4) return alert("请先填写同步码(至少4位英文或数字)！");
           $bus.emit('downloadConfig', this.config.syncCode, (res) => {
             if (res.config) this.config = res.config
-            if (res.setting) this.setting = res.setting
+            if (res.setting) this.setting = { ...this.setting, ...res.setting }
             dnotify("设置已成功下载！");
           })
         },
@@ -345,7 +352,7 @@
     
     var vueApp = app.mount('#app');
 
-    function genId() { return Date.now().toString(36) + Math.random().toString(36).substring(2, 7); }
+    function genId(len = 4) { return Math.random().toString(32).slice(-len); }
 
     function uploadText() {
       return new Promise((res, rej) => {

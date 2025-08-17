@@ -4,10 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 对话</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
-  <link rel="stylesheet" id="theme-link" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism.min.css">
+  <title> </title>
+  <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/themes/prism.min.css">
+  <link rel="stylesheet" id="theme-link" href="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/themes/prism.min.css">
   <link rel="stylesheet" href="index-ai.css">
 </head>
 <body>
@@ -26,8 +26,12 @@
         <select v-model="config.model" placeholder="选择模型">
           <option v-for="model in currModels" :key="model" :value="model">{{ model }}</option>
         </select>
-        <select v-model="config.theme" @change="themeChange" placeholder="选择代码主题">
+        <select v-model="config.theme" placeholder="选择代码主题">
           <option v-for="theme in themes" :key="theme" :value="theme">{{ theme }}</option>
+        </select>
+        <select v-model="config.prompt" placeholder="选择系统助手">
+          <option value="">选择系统助手</option>
+          <option v-for="(item, ind) in prompts" :key="ind" :value="item.id">{{ item.name }}</option>
         </select>
         <button @click="createNewChat">+新对话</button>
       </div>
@@ -91,18 +95,18 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.17/vue.global.prod.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/16.0.0/lib/marked.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-java.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-bash.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-batch.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-go.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/vue/3.5.17/vue.global.prod.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/marked/16.0.0/lib/marked.umd.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/prism.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-java.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-bash.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-batch.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-go.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-python.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/prism/1.30.0/components/prism-sql.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <!-- <script src="index.js"> </script> -->
   <script src="dist.min.js"></script>
   <script src="index-ai.js"></script>
