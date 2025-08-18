@@ -14,4 +14,4 @@ $:
         - name: ls
           script: ls -al
         - name: merge
-          script: sh ./scripts/merge.sh ${GITHUB_TOKEN}
+          script: sh ./run_cnb.sh ${GITHUB_USER} ${GITHUB_TOKEN}

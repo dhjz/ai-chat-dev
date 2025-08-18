@@ -4,10 +4,14 @@
 # 作用: 添加或更新 'github' 远程仓库，并将其 master 分支内容合并到当前本地 master 分支。
 
 # --- 配置变量 ---
-GITHUB_TOKEN="$1"
+GITHUB_USER="$1"
+GITHUB_TOKEN="$2"
 GITHUB_REMOTE_NAME="github"
 GITHUB_REMOTE_URL="https://github.com/dhjz/ai-chat-dev.git"
 TARGET_BRANCH="master" # 你希望操作的分支
+
+git config --global credential.helper store
+echo "https://$GITHUB_USER:$GITHUB_TOKEN@github.com" > ~/.git-credentials
 
 echo "--- 步骤 1: 添加/更新远程仓库 '$GITHUB_REMOTE_NAME' $GITHUB_TOKEN ---"
 if git remote -v | grep -q "^$GITHUB_REMOTE_NAME"; then
