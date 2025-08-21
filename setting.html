@@ -312,7 +312,10 @@
         downConfig() {
           if (!this.config.syncCode || this.config.syncCode.length < 4) return alert("请先填写同步码(至少4位英文或数字)！");
           $bus.emit('downloadConfig', this.config.syncCode, (res) => {
-            if (res.config) this.config = res.config
+            if (res.config) this.config = { 
+              ...res.config, // 下面的参数非本页面配置, 不做处理
+              provider: this.config.provider, model: this.config.model, theme: this.config.theme, prompt: this.config.prompt 
+            }
             if (res.setting) this.setting = { ...this.setting, ...res.setting }
             dnotify("设置已成功下载！");
           })
