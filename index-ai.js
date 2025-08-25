@@ -13,6 +13,7 @@ window.vueApp = Vue.createApp({
       providers: [],
       prompts: [],
       userInput: '',
+      userFile: {},
       chatHistory: [],
       currentChatId: null,
       isStreaming: false,
@@ -207,12 +208,13 @@ window.vueApp = Vue.createApp({
       if (!provider.key) return alert('没有配置正确的key，无法发送请求。');
       if (!this.config.model) return alert('请先选择模型。');
 
-      const userMessage = { role: 'user', content: this.userInput.trim(), help: this.currentSysPrompt ? this.currentSysPrompt.name : '' };
+      const userMessage = { role: 'user', content: this.userInput.trim(), file: { ...this.userFile }, help: this.currentSysPrompt ? this.currentSysPrompt.name : '' };
       if (!this.currentChat) {
         this.createNewChat();
       }
       this.currentChat.messages.push(userMessage);
       this.userInput = '';
+      this.userFile = {};
       this.scrollToBottom();
 
       const aiMessage = { id: Math.random().toString(32).slice(-4), role: 'assistant', content: '', remark: '', tokenCount: 0, dir: null, isError: false };
@@ -374,6 +376,14 @@ window.vueApp = Vue.createApp({
         }
       }
     },
+    uploadAsk() {
+      uploadText().then(res => {
+        if (res && res.data && res.data.trim()) {
+          this.userFile = { name: res.name, data: res.data };
+          console.log('this.userFile', this.userFile);
+        }
+      })
+    },
     async loadDataFromStorage() {
       let history = await localforage.getItem('chatHistory');
       if (history) {
@@ -472,12 +482,12 @@ function downloadText(text, name) {
   URL.revokeObjectURL(url);
 }
 
+window.extensionMap = {
+  js: 'js', javascript: 'js', ts: 'ts', typescript: 'ts', py: 'py', python: 'py', java: 'java', c: 'c', sql: 'sql', vue: 'vue', text: 'txt',
+  cpp: 'cpp', 'c++': 'cpp', cs: 'cs', csharp: 'cs',  go: 'go', php: 'php', ruby: 'rb', html: 'html', xml: 'xml', json: 'json',
+  css: 'css', scss: 'scss', less: 'less', yml: 'yml', yaml: 'yaml', shell: 'sh', bash: 'sh', sh: 'sh', bat: 'bat', batch: 'bat',
+};
 function getFileExt(ele) {
-  const extensionMap = {
-    js: 'js', javascript: 'js', ts: 'ts', typescript: 'ts', py: 'py', python: 'py', java: 'java', c: 'c', sql: 'sql', vue: 'vue', 
-    cpp: 'cpp', 'c++': 'cpp', cs: 'cs', csharp: 'cs',  go: 'go', php: 'php', ruby: 'rb', html: 'html', xml: 'xml', json: 'json',
-    css: 'css', scss: 'scss', less: 'less', yml: 'yml', yaml: 'yaml', shell: 'sh', bash: 'sh', sh: 'sh', bat: 'bat', batch: 'bat',
-  };
   if (!ele || !ele.classList) return '';
   const cls = Array.from(ele.classList).find(x => x.startsWith('language-'));
   if (!cls) return '';
@@ -507,4 +517,21 @@ function dnotify(txt, time) {
   dnotifyEl.innerHTML = txt;
   clearTimeout(dnotifyTimer);
   dnotifyTimer = setTimeout(() => dnotifyEl.style.display = 'none', (time || 2) * 1000);
+}
+
+function uploadText() {
+  return new Promise((res) => {
+    document.getElementById('importInput')?.remove()
+    const accept = Object.values(extensionMap).map(ext => `.${ext}`).join(',')
+    const inputEl = Object.assign(document.createElement('input'), { type: 'file', accept, id: 'importInput', style: 'display: none;' })
+    document.body.append(inputEl)
+    inputEl.onchange = function () {
+      const file = inputEl.files[0]
+      if (!file) return res(null)
+      const reader = new FileReader()
+      reader.readAsText(file, 'UTF-8')
+      reader.onload = () => res({ name: file.name, data: reader.result, size: file.size, type: file.type })
+    }
+    inputEl.click()
+  })
 }

@@ -382,47 +382,50 @@ pre.over-code {
   user-select: none;
 }
 
-.send-btn,
-.stop-btn {
+.send-btn-wrap {
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+}
+.send-btn {
   background-color: var(--c-accent);
   color: white;
   border: none;
   cursor: pointer;
   border-radius: 8px;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   transition: background-color 0.2s;
+  opacity: .9;
 }
 
-.send-btn:hover,
-.stop-btn:hover {
-  background-color: var(--c-accent-hover);
-}
-
-.send-btn {
-  font-size: 20px;
-}
-
-.stop-btn {
-  font-size: 18px;
+.send-btn.stop {
   background-color: #ef4444;
+}
+.send-btn.file {
+  background-color: #67C23A;
 }
 
 .send-btn.del {
   background-color: #959595;
-  right: 56px;
+  right: 50px;
 }
 
-.stop-btn:hover {
-  background-color: #dc2626;
+.send-btn:hover {
+  opacity: 1;
 }
+
+.send-btn+.send-btn {
+  margin-left: 6px;
+}
+
 
 .token-count {
   font-size: 12px;

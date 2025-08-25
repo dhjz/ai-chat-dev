@@ -77,9 +77,12 @@
         <div class="chat-input-wrapper">
           <textarea v-model="userInput" class="chat-input" @keydown.enter="handleEnter"
             placeholder="输入消息提问...(Shift+Enter 换行)" rows="1"></textarea>
-          <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
-          <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
-          <button v-if="isStreaming" class="stop-btn" @click="stopStream">■</button>
+          <div class="send-btn-wrap">
+            <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
+            <!-- <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📁</button> -->
+            <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
+            <button v-if="isStreaming" class="send-btn stop" @click="stopStream">■</button>
+          </div>
         </div>
         <div class="to-top auto-scroll" :class="{ opacity: autoScroll }" @click="autoScroll = !autoScroll" title="解除自动滚动底部">⇅</div>
         <div class="to-top" @click="scrollToBottom(true)" @dblclick="goTop" title="单击到底部, 双击回顶部">⇩</div>
