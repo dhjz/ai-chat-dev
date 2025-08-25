@@ -55,7 +55,7 @@
             <div v-else-if="message.role === 'user'" 
               class="prose" 
               :class="[message.role, 'msg_' + (message.id || 'u')]" 
-              :style="{ fontSize: (config.fontSize || 16) + 'px' }">{{ message.content }}</div>
+              :style="{ fontSize: (config.fontSize || 16) + 'px' }">{{ message.content }}{{ message.help ? (' [' + message.help + ']') : '' }}</div>
             <div v-else
               class="prose" 
               :class="[message.role, 'msg_' + (message.id || 'm')]" 

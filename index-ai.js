@@ -43,7 +43,7 @@ window.vueApp = Vue.createApp({
       return this.chatHistory.find(chat => chat.id === this.currentChatId);
     },
     currentSysPrompt() {
-      return this.prompts.find(x => x.id == this.config.prompt)?.prompt || '';
+      return this.prompts.find(x => x.id == this.config.prompt) || null;
     },
     currentChatMessages() {
       return this.currentChat ? this.currentChat.messages : [];
@@ -207,7 +207,7 @@ window.vueApp = Vue.createApp({
       if (!provider.key) return alert('没有配置正确的key，无法发送请求。');
       if (!this.config.model) return alert('请先选择模型。');
 
-      const userMessage = { role: 'user', content: this.userInput.trim() };
+      const userMessage = { role: 'user', content: this.userInput.trim(), help: this.currentSysPrompt ? this.currentSysPrompt.name : '' };
       if (!this.currentChat) {
         this.createNewChat();
       }
@@ -226,7 +226,7 @@ window.vueApp = Vue.createApp({
       let tokens = null;
       document.title = 'AI 对话中...'
       try {
-        let sysMessage = this.currentSysPrompt ? [{ role: 'system', content: this.currentSysPrompt }] : []
+        let sysMessage = this.currentSysPrompt && this.currentSysPrompt.prompt ? [{ role: 'system', content: this.currentSysPrompt.prompt }] : []
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
           headers: {
