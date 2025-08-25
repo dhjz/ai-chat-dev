@@ -430,7 +430,7 @@ window.vueApp = Vue.createApp({
           }
         }
       })
-      setInterval(() => this.chatChanged && this.syncChat(), 20 * 1000) // 20秒同步一次对话
+      setInterval(() => this.chatChanged && this.syncChat(), 10 * 1000) // 20秒同步一次对话
     },
     syncChat() {
       console.log('开始自动同步聊天记录...');
