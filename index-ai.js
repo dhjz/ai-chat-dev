@@ -305,7 +305,7 @@ window.vueApp = Vue.createApp({
         if (this.currentChat.messages.length === 2 && this.currentChat.title === '新对话') {
           this.currentChat.title = this.currentChat.messages[0].content.substring(0, 30);
         }
-        this.saveHistory()
+        this.saveHistory(true)
       }
     },
     stopStream() {
@@ -411,11 +411,12 @@ window.vueApp = Vue.createApp({
         location.href = './setting.html';
       }
     },
-    saveHistory() {
+    saveHistory(isSyncNow) {
       let data = zipStr8(JSON.stringify(this.chatHistory));
       console.log(`save chatHistory, length: ${data.length}, size: ${(data.length / 1024).toFixed(2)}kb`);
       localforage.setItem('chatHistory', data);
       this.chatChanged = true
+      if (isSyncNow) this.syncChat()
     },
     initSyncChat() {
       if (!this.chatSyncCode) return;
