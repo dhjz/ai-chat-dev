@@ -52,7 +52,11 @@
               <span>请求失败, 请打开调试窗口查看错误信息.</span>
               <button class="retry-btn" @click="retryLastMessage">重试</button>
             </div>
-            <div v-else 
+            <div v-else-if="message.role === 'user'" 
+              class="prose" 
+              :class="[message.role, 'msg_' + (message.id || 'u')]" 
+              :style="{ fontSize: (config.fontSize || 16) + 'px' }">{{ message.content }}</div>
+            <div v-else
               class="prose" 
               :class="[message.role, 'msg_' + (message.id || 'm')]" 
               :style="{ fontSize: (config.fontSize || 16) + 'px' }" 
