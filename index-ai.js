@@ -272,12 +272,13 @@ window.vueApp = Vue.createApp({
               try {
                 const json = JSON.parse(data);
                 console.log(json);
-                if (json.usage && json.usage.total_tokens && !tokens) {
-                  tokens = {prompt: json.usage.prompt_tokens, chat: json.usage.completion_tokens, total: json.usage.total_tokens }
-                } else if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
+                if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                   const delta = json.choices[0].delta.content;
                   reactiveAIMessage.content += delta;
                   this.scrollToBottom();
+                }
+                if (json.usage && json.usage.total_tokens && !tokens) {
+                  tokens = {prompt: json.usage.prompt_tokens, chat: json.usage.completion_tokens, total: json.usage.total_tokens }
                 }
               } catch (e) {
                 console.error('Error parsing stream data chunk:', data, e);
@@ -421,8 +422,11 @@ window.vueApp = Vue.createApp({
       $bus.emit('downloadConfig', this.chatSyncCode, (res) => {
         console.log('下载的对话:', res);
         if (res && res.length) {
-          this.chatHistory = res
-          this.currentChatId = this.chatHistory[0].id;
+          let one = res[0].messages[res[0].messages.length - 1]
+          if (!one || one.content || confirm(`云端最后一次对话无回答, 是否覆盖下载?`)) {
+            this.chatHistory = res
+            this.currentChatId = this.chatHistory[0].id;
+          }
         }
       })
       setInterval(() => this.chatChanged && this.syncChat(), 20 * 1000) // 20秒同步一次对话
