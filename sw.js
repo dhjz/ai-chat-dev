@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'chat-cache-v1';
+const CACHE_NAME = 'chat-cache-v3';
 const URLS_TO_PRECACHE = [
   '/',
   // '/favicon.ico',
@@ -28,7 +28,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET') return;
+  if (request.method !== 'GET' || request.url.includes('cdn')) return;
   event.respondWith(
     caches.match(request).then(cachedResponse => cachedResponse || fetch(request)).catch(() => {})
   );
