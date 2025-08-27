@@ -80,6 +80,7 @@ window.vueApp = Vue.createApp({
   },
   mounted() {
     this.loadDataFromStorage();
+    this.initListener()
   },
   methods: {
     open(url) { window.open(url) },
@@ -376,14 +377,6 @@ window.vueApp = Vue.createApp({
         }
       }
     },
-    uploadAsk() {
-      uploadText().then(res => {
-        if (res && res.data && res.data.trim()) {
-          this.userFile = { name: res.name, data: res.data };
-          console.log('this.userFile', this.userFile);
-        }
-      })
-    },
     async loadDataFromStorage() {
       let history = await localforage.getItem('chatHistory');
       if (history) {
@@ -452,11 +445,35 @@ window.vueApp = Vue.createApp({
         dnotify(res)
         this.chatChanged = false;
       })
+    },
+    uploadAsk() {
+      uploadText().then(res => this.handleUpload(res?.data))
+    },
+    initListener() {
+      document.addEventListener('dragover', (e) => e.preventDefault())
+      document.addEventListener('drop', (e) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files?.[0]
+        if (!file) return;
+        const reader = new FileReader()
+        reader.readAsText(file, 'UTF-8')
+        reader.onload = () => this.handleUpload(reader.result)
+      })
+    },
+    handleUpload(text) {
+      if (!text || !text.trim()) return;
+      this.userInput = text.trim() + '\n' + this.userInput;
+      this.$nextTick(() => {
+        $q('.chat-input').scrollTop = $q('.chat-input').scrollHeight;
+        $q('.chat-input').focus();
+      })
     }
   },
 }).mount('#app');
 
 /**************** 工具函数 *******************/
+function $q(val) { return document.querySelector(val) }
+function $qa(val) { return Array.from(document.querySelectorAll(val)) }
 // 压缩字符串为Uint8Array
 function zipStr8(str) {
   return pako.deflate(new TextEncoder().encode(str), { level: 9 });
@@ -527,7 +544,7 @@ function uploadText() {
     document.body.append(inputEl)
     inputEl.onchange = function () {
       const file = inputEl.files[0]
-      if (!file) return res(null)
+      if (!file) return res({})
       const reader = new FileReader()
       reader.readAsText(file, 'UTF-8')
       reader.onload = () => res({ name: file.name, data: reader.result, size: file.size, type: file.type })

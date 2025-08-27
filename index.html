@@ -79,7 +79,7 @@
             placeholder="输入消息提问...(Shift+Enter 换行)" rows="1"></textarea>
           <div class="send-btn-wrap">
             <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
-            <!-- <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📁</button> -->
+            <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📁</button>
             <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
             <button v-if="isStreaming" class="send-btn stop" @click="stopStream">■</button>
           </div>
