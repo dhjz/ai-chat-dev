@@ -600,6 +600,11 @@ code[class*=language-], pre[class*=language-] {
 .message-wrapper .token.operator {
   background: none !important;
 }
+.theme-prism {
+  :not(pre)>code[class*=language-], pre[class*=language-] {
+    background: #f7f7f7;
+  }
+}
 
 @media screen and (min-width: 1590px) {
   .chat-nav {

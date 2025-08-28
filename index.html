@@ -26,7 +26,7 @@
         <select v-model="config.model" placeholder="选择模型">
           <option v-for="model in currModels" :key="model" :value="model">{{ model }}</option>
         </select>
-        <select v-model="config.theme" placeholder="选择代码主题">
+        <select v-model="config.theme" @change="themeChange" placeholder="选择代码主题">
           <option v-for="theme in themes" :key="theme" :value="theme">{{ theme }}</option>
         </select>
         <select v-model="config.prompt" placeholder="选择系统助手">
@@ -43,7 +43,7 @@
         </div>
       </div>
     </div>
-    <div class="chat-container" @click="showSidebar = false">
+    <div class="chat-container" @click="showSidebar = false" :class="['theme-' + config.theme]">
       <div class="chat-messages" ref="chatMessages" @click="handleChatClick">
         <div v-for="(message, index) in currentChatMessages" :key="index" :id="'curr-chat-' + index" class="message-wrapper" :class="message.role">
           <div class="avatar">{{ message.role === 'user' ? 'U' : 'AI' }}</div>
