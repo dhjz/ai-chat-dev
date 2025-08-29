@@ -158,7 +158,8 @@ window.vueApp = Vue.createApp({
             console.log(prose.querySelectorAll('code[class="language-css"]'));
             prose.querySelectorAll('code[class="language-css"]').forEach((c) => styleHtml += c.textContent);
             prose.querySelectorAll('code[class="language-javascript"]').forEach((c) => jsHtml += c.textContent);
-            localStorage.setItem('dai-runHtml', codeEle.textContent.replace('<\/body>', `<style>\n${styleHtml}<\/style>\n<script>\n${jsHtml}<\/script>\n<\/body>`));
+            const htmlStr = codeEle.textContent.includes('<\/body>') ? codeEle.textContent : `<body>${codeEle.textContent}</body>`;
+            localStorage.setItem('dai-runHtml', htmlStr.replace('<\/body>', `<style>\n${styleHtml}<\/style>\n<script>\n${jsHtml}<\/script>\n<\/body>`));
             // if (window.openWin && !window.openWin.closed) {
             //   window.openWin.location.reload()
             // } else {
