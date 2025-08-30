@@ -5,61 +5,114 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>代码在线运行</title>
   <style>
-    .run-code-btn { position: fixed;top: 5px;right: 5px;background: #fff;font-size: 12px;border: 1px solid #ccc;padding: 2px 6px;margin: 0;z-index: 99999;color: #333;border-radius: 4px;opacity: 0.8; cursor: pointer; }
-    .run-code-btn-1 { top: 34px; }
+    .run-btns { position: fixed; top: 5px; right: 5px; font-size: 12px;margin: 0;z-index: 99999; opacity: 0.8; }
+    .run-btns button { margin: 6px 4px 0 0; display: inline-block; background: #fff; color: #333;border-radius: 4px; cursor: pointer;border: 1px solid #ccc;padding: 2px 6px; }
   </style>
 </head>
 <body>
-  <script>
-    const loadFromStorage = () => {
-     const html = localStorage.getItem('dai-runHtml');
-     if (html) {
-       document.write(html);
-       document.close();
-       setTimeout(() => {
-        const downBtn = document.createElement('button');
-        downBtn.innerText = '下载Html';
-        downBtn.className = 'run-code-btn';
-        downBtn.onclick = () => downloadText(html, 'index.html')
-        document.body.append(downBtn);
-        const copyBtn = document.createElement('button');
-        copyBtn.innerText = '复制Html';
-        copyBtn.className = 'run-code-btn run-code-btn-1';
-        copyBtn.onclick = () => navigator.clipboard.writeText(html)
-        document.body.append(copyBtn);
-       }, 500)
-     } else {
-       document.write('<h1 style="text-align: center; padding: 30px;">暂无可运行代码!</h1>');
-     }
-   };
-   loadFromStorage();
+  <div id="code-editor"></div>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/ace/1.43.2/ace.min.js"></script>
+  <script src="https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/ace/1.43.2/ext-language_tools.min.js"></script>
 
-   function download(blob, name) {
-      if (window.navigator.msSaveOrOpenBlob) {
-        navigator.msSaveBlob(blob, name)
+  <script>
+    window.urlObj = Object.fromEntries(new URLSearchParams(window.location.search))
+    window.createEle = (tag, attrs) => Object.assign(document.createElement(tag), attrs)
+    window.htmlStr = urlObj.html ? decodeURIComponent(urlObj.html) : (localStorage.getItem('dai-runHtml') || '')
+    window.isEdit = urlObj.type === 'edit'
+    console.log('初始化数据: isEdit: ', isEdit, urlObj, { htmlStr })
+    if (isEdit) {
+      editFromStorage()
+      document.addEventListener('dragover', (e) => e.preventDefault())
+      document.addEventListener('drop', (e) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files?.[0]
+        if (!file) return;
+        const reader = new FileReader()
+        reader.onload = () => window.editor?.setValue(reader.result)
+        reader.readAsText(file, 'UTF-8')
+      })
+    } else {
+      if (htmlStr) {
+        document.write(htmlStr);
+        document.close();
       } else {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        URL.revokeObjectURL(url);
-        setTimeout(() => link.remove(), 200);
+        document.write('<h1 style="text-align: center; padding: 30px;">暂无可运行代码, 点击右侧"编辑"按钮或者传入URL参数"html"</h1>');
+      }
+    }
+
+    setTimeout(() => {
+      let btns = createEle('div', { className: 'run-btns' });
+      isEdit && btns.append(createEle('button', { innerText: '上传', onclick: () => handleClick('up') }))
+      btns.append(createEle('button', { innerText: '下载', onclick: () => handleClick('down') }))
+      btns.append(createEle('button', { innerText: '复制', onclick: () => handleClick('copy') }))
+      btns.append(createEle('button', { innerText: '新页面', onclick: () => handleClick('nrun') }))
+      btns.append(createEle('button', { innerText: isEdit ? '运行' : '编辑', onclick: () => handleClick(isEdit ? 'run' : 'edit') }))
+      document.body.append(btns);
+    }, 200)
+
+    function editFromStorage() {
+      document.body.append(createEle('style', { innerText: `* { margin: 0; padding: 0; box-sizing: border-box;} #code-editor{ width: 100dvw; height: 100dvh}` }))
+      window.editor = ace.edit('code-editor', {
+        theme: 'ace/theme/chrome', // 主题
+        mode: 'ace/mode/html', // 代码匹配模式
+        tabSize: 2, //标签大小
+        fontSize: 14, //设置字号
+        enableSnippets: true, // 启用代码段
+        showLineNumbers: true, // 显示行号
+        enableLiveAutocompletion: true, // 启用实时自动完成功能 （比如：智能代码提示）
+        enableBasicAutocompletion: true, // 启用基本自动完成功能
+        keyboardHandler: 'ace/keyboard/vscode',
+      });
+      editor.setValue(htmlStr)
+      editor.commands.addCommand({ name: 'save', bindKey: {win: 'Ctrl-S', mac: 'Command-S'}, exec: () => handleClick('save')})
+    }
+
+    function handleClick(type) {
+      htmlStr = window.editor? window.editor.getValue() : htmlStr
+      if (type === 'down') {
+        if (!htmlStr) return alert('没有可下载的代码')
+        downloadText(htmlStr, 'index.html')
+      } else if (type === 'copy') {
+        if (!htmlStr) return alert('没有可复制的代码')
+        navigator.clipboard.writeText(htmlStr)
+      } else if (type === 'run') {
+        localStorage.setItem('dai-runHtml', htmlStr)
+        window.location.href = '/run.html'
+      } else if (type === 'edit') {
+        localStorage.setItem('dai-runHtml', htmlStr)
+        window.location.href = '/run.html?type=edit'
+      } else if (type === 'nrun') {
+        window.open(URL.createObjectURL(new Blob([htmlStr], { type: 'text/html;charset=utf-8' })));
+      } else if (type === 'save') {
+        localStorage.setItem('dai-runHtml', htmlStr)
+      } else if (type === 'up') {
+        uploadText().then(({ data }) => data && window.editor && window.editor.setValue(data))
       }
     }
 
     function downloadText(text, name) {
-      download(new Blob([text], { type: 'text/plain;charset=utf-8' }), name)
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+      const link = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(link).click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
-   let themesAll = ['prism', 'prism-coy', 'prism-dark', 'prism-okaidia', 'prism-tomorrow', 'prism-solarizedlight', 'prism-twilight',
-      't-prism-a11y-dark', 't-prism-atom-dark', 't-prism-base16-ateliersulphurpool.light', 't-prism-cb', 't-prism-coldark-cold', 't-prism-coldark-dark', 
-      't-prism-coy-without-shadows', 't-prism-darcula', 't-prism-dracula', 't-prism-duotone-dark', 't-prism-duotone-earth', 't-prism-duotone-forest',
-      't-prism-duotone-light', 't-prism-duotone-sea', 't-prism-duotone-space', 't-prism-ghcolors', 't-prism-gruvbox-dark', 't-prism-gruvbox-light',
-      't-prism-holi-theme', 't-prism-hopscotch', 't-prism-lucario', 't-prism-material-dark', 't-prism-material-light', 't-prism-material-oceanic',
-      't-prism-night-owl', 't-prism-nord', 't-prism-one-dark', 't-prism-one-light', 't-prism-pojoaque', 't-prism-shades-of-purple', 
-      't-prism-solarized-dark-atom', 't-prism-synthwave84', 't-prism-vs', 't-prism-vsc-dark-plus', 't-prism-xonokai', 't-prism-z-touch']
+    function uploadText() {
+      return new Promise((res) => {
+        document.getElementById('impinput')?.remove()
+        const inputEl = Object.assign(document.createElement('input'), { type: 'file', accept: '.html,.htm', id: 'impinput', style: 'display: none;' })
+        document.body.append(inputEl)
+        inputEl.onchange = function () {
+          const file = inputEl.files[0]
+          if (!file) return res(null)
+          const reader = new FileReader()
+          reader.readAsText(file, 'UTF-8')
+          reader.onload = () => res({ name: file.name, data: reader.result, size: file.size, type: file.type })
+        }
+        inputEl.click()
+      })
+    }
   </script>
 </body>
 </html>
