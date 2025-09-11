@@ -61,7 +61,7 @@ body {
 .dialog-cont { min-width: 40vw; max-width: min(1400px, 90vw); min-height: 40vh; max-height: 92vh; overflow: auto;  background: #fff; border-radius: 12px; padding: 10px; }
 .line1 { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }    
 
-#app {
+#chat-app {
   display: flex;
   height: 100vh;
   height: 100dvh;

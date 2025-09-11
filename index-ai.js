@@ -470,7 +470,7 @@ window.vueApp = Vue.createApp({
       })
     }
   },
-}).mount('#app');
+}).mount('#chat-app');
 
 /**************** 工具函数 *******************/
 function $q(val) { return document.querySelector(val) }
