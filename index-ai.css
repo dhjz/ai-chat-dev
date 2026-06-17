@@ -406,11 +406,11 @@ pre.over-code {
   opacity: .9;
   position: relative;
 }
-.send-btn i {
+.send-btn i, .send-btn span {
   position: absolute;
   right: -6px;
   top: -8px;
-  background-color: #ef4444;
+  background-color: var(--c-accent);
   width: 18px;
   height: 18px;
   line-height: 18px;
@@ -419,11 +419,15 @@ pre.over-code {
   font-size: 11px;
   z-index: 1;
 }
-.send-btn i:hover {
+.send-btn i:hover, .send-btn span:hover {
   opacity: .7;
 }
+.send-btn span {
+  right: auto;
+  left: -6px;
+}
 
-.send-btn.stop {
+.send-btn.stop, .send-btn span {
   background-color: #ef4444;
 }
 .send-btn.file {

@@ -84,7 +84,10 @@
           <div class="send-btn-wrap">
             <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
             <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📃</button><!--📁-->
-            <button class="send-btn file" @click="uploadImg" title="上传图片">🖼️ <i v-if="userFile && userFile.url" @click.stop="open(userFile.url)">1</i></button>
+            <button class="send-btn file" @click="uploadImg" title="上传图片">
+              🖼️ <i v-if="userFile && userFile.url" @click.stop="open(userFile.url)" :title="userFile.name">1</i>
+              <span v-if="userFile && userFile.url" @click.stop="userFile = {}" title="删除图片">x</span>
+            </button>
             <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
             <button v-if="isStreaming" class="send-btn stop" @click="stopStream">■</button>
           </div>

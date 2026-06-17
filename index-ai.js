@@ -486,10 +486,27 @@ window.vueApp = Vue.createApp({
         e.preventDefault()
         const file = e.dataTransfer.files?.[0]
         if (!file) return;
+        this.handleAddFile(file)
+      })
+      document.addEventListener('paste', (e) => {
+        var items = e.clipboardData.items
+        if (!items) return;
+        this.handleAddFile(items[0].getAsFile())
+      })
+    },
+    async handleAddFile(file) {
+      console.log('handleAddFile', file)
+      if (file.type.includes('image')) {
+        const res = await uploadImageUrl(file)
+        if (res && res.url) {
+          this.userFile = res
+        }
+      } else {
+        if (file.size > 1 * 1024 * 1024) return dnotify('文本文件大小不能超过1MB'); // 文本文件大小限制1MB
         const reader = new FileReader()
         reader.readAsText(file, 'UTF-8')
         reader.onload = () => this.handleUpload(reader.result)
-      })
+      }
     },
     handleUpload(text) {
       if (!text || !text.trim()) return;
@@ -593,29 +610,34 @@ function uploadImage() {
     inputEl.onchange = async function () {
       const file = inputEl.files[0]
       if (!file) return reso({})
-      if (file.size > 5 * 1024 * 1024) {
-          dnotify('图片大小不能超过5M');
-          return reso({});
-      }
-      const formData = new FormData();
-      formData.append('file', file);
-      dnotify('上传中, 请等待完成...');
-      try {
-          const res = await fetch(`https://f.199311.xyz/tmp`, { method: 'POST', body: formData }).then(res => res.json());
-          console.log(res)
-          if (!res || !res.data) {
-              dnotify('上传失败，请重试');
-              return reso({});
-          }
-          dnotify('上传图片成功');
-          reso({name: file.name, size: file.size, type: file.type, url: `https://f.199311.xyz/tmp/${res.data}`})
-          
-      } catch (error) {
-          dnotify('上传失败，请重试');
-          console.error('Upload error:', error);
-          reso({})
-      }
+
+      reso(await uploadImageUrl(file))
     }
     inputEl.click()
   })
+}
+
+async function uploadImageUrl(file) {
+  if (file.size > 5 * 1024 * 1024) {
+      dnotify('图片大小不能超过5M');
+      return {};
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  dnotify('上传中, 请等待完成...');
+  try {
+      const res = await fetch(`https://f.199311.xyz/tmp`, { method: 'POST', body: formData }).then(res => res.json());
+      console.log(res)
+      if (!res || !res.data) {
+          dnotify('上传失败，请重试');
+          return {};
+      }
+      dnotify('上传图片成功');
+      return { name: file.name, size: file.size, type: file.type, url: `https://f.199311.xyz/tmp/${res.data}` }
+      
+  } catch (error) {
+      dnotify('上传失败，请重试');
+      console.error('Upload error:', error);
+      return {}
+  }
 }
