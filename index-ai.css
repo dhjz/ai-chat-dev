@@ -45,7 +45,7 @@ a { text-decoration: none; color: inherit; }
   --c-code-bg: #030712;
   --c-code-fg: #f9fafb;
 }
-
+i { font-style: normal; }
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
@@ -404,6 +404,23 @@ pre.over-code {
   line-height: 1;
   transition: background-color 0.2s;
   opacity: .9;
+  position: relative;
+}
+.send-btn i {
+  position: absolute;
+  right: -6px;
+  top: -8px;
+  background-color: #ef4444;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  z-index: 1;
+}
+.send-btn i:hover {
+  opacity: .7;
 }
 
 .send-btn.stop {

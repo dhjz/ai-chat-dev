@@ -55,7 +55,11 @@
             <div v-else-if="message.role === 'user'" 
               class="prose" 
               :class="[message.role, 'msg_' + (message.id || 'u')]" 
-              :style="{ fontSize: (config.fontSize || 16) + 'px' }">{{ message.content }}{{ message.help ? (' [' + message.help + ']') : '' }}</div>
+              :style="{ fontSize: (config.fontSize || 16) + 'px' }">
+              {{ message.content }}
+              {{ message.help ? (' [' + message.help + ']') : '' }}
+              <a :href="message.file.url" target="_blank" v-if="message.file && message.file.name" title="有效期1个小时"><br>[上传文件: {{ message.file.name }}]</a>
+            </div>
             <div v-else
               class="prose" 
               :class="[message.role, 'msg_' + (message.id || 'm')]" 
@@ -79,7 +83,8 @@
             placeholder="输入消息提问...(Shift+Enter 换行)" rows="1"></textarea>
           <div class="send-btn-wrap">
             <button v-if="userInput" class="send-btn del" @click="userInput = ''">✖</button>
-            <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📁</button>
+            <button class="send-btn file" @click="uploadAsk" title="上传文本类型的文件">📃</button><!--📁-->
+            <button class="send-btn file" @click="uploadImg" title="上传图片">🖼️ <i v-if="userFile && userFile.url" @click.stop="open(userFile.url)">1</i></button>
             <button v-if="!isStreaming" class="send-btn" @click="sendMessage">➤</button>
             <button v-if="isStreaming" class="send-btn stop" @click="stopStream">■</button>
           </div>

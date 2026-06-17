@@ -32,7 +32,7 @@ window.vueApp = Vue.createApp({
         codeLine: 0,
         temperature: 0.6,
         top_p: 1,
-      }
+      },
     };
   },
   computed: {
@@ -231,6 +231,26 @@ window.vueApp = Vue.createApp({
       document.title = 'AI 对话中...'
       try {
         let sysMessage = this.currentSysPrompt && this.currentSysPrompt.prompt ? [{ role: 'system', content: this.currentSysPrompt.prompt }] : []
+        let hisMessages = []
+        this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).forEach(x => {
+          if (x.role === 'assistant') {
+            hisMessages.push({ role: x.role, content: x.content })
+          } else {
+            if (x.file && x.file.url) {
+              hisMessages.push({
+                role: "user",
+                content: [
+                  { type: "text", text: x.content },
+                  { type: "image_url", image_url: { url: x.file.url }}
+                ]
+              })
+            } else {
+              hisMessages.push({ role: x.role, content: x.content })
+            }
+          }
+        })
+
+
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
           headers: {
@@ -239,7 +259,7 @@ window.vueApp = Vue.createApp({
           },
           body: JSON.stringify({
             model: this.config.model,
-            messages: sysMessage.concat(this.currentChat.messages.slice(this.useContext ? 0 : -2, -1).map(m => ({ role: m.role, content: m.content }))),
+            messages: sysMessage.concat(hisMessages),
             stream: true,
             frequency_penalty: 0, // 文本的流畅性和完整性，即使它可能包含一些重复
             presence_penalty: 0,
@@ -297,6 +317,7 @@ window.vueApp = Vue.createApp({
           reactiveAIMessage.isError = true;
           reactiveAIMessage.content = `请求失败: ${error.message}`;
         }
+        console.log(error)
       } finally {
         document.title = 'AI 对话'
         this.isStreaming = false;
@@ -385,6 +406,7 @@ window.vueApp = Vue.createApp({
           history = unzipStr8(history);
         }
         this.chatHistory = JSON.parse(history);
+        console.log('this.chatHistory', this.chatHistory)
       }
       if (this.chatHistory.length > 0) {
         this.currentChatId = this.chatHistory[0].id;
@@ -449,6 +471,14 @@ window.vueApp = Vue.createApp({
     },
     uploadAsk() {
       uploadText().then(res => this.handleUpload(res?.data))
+    },
+    uploadImg() {
+      uploadImage().then(res => {
+        if (res && res.url) {
+          this.userFile = res
+        }
+        console.log('图片上传结果:', res, this.userFile)
+      })
     },
     initListener() {
       document.addEventListener('dragover', (e) => e.preventDefault())
@@ -549,6 +579,42 @@ function uploadText() {
       const reader = new FileReader()
       reader.readAsText(file, 'UTF-8')
       reader.onload = () => res({ name: file.name, data: reader.result, size: file.size, type: file.type })
+    }
+    inputEl.click()
+  })
+}
+
+function uploadImage() {
+  return new Promise((reso) => {
+    document.getElementById('importInput')?.remove()
+    const accept = 'image/*'
+    const inputEl = Object.assign(document.createElement('input'), { type: 'file', accept, id: 'importInput', style: 'display: none;' })
+    document.body.append(inputEl)
+    inputEl.onchange = async function () {
+      const file = inputEl.files[0]
+      if (!file) return reso({})
+      if (file.size > 5 * 1024 * 1024) {
+          dnotify('图片大小不能超过5M');
+          return reso({});
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      dnotify('上传中, 请等待完成...');
+      try {
+          const res = await fetch(`https://f.199311.xyz/tmp`, { method: 'POST', body: formData }).then(res => res.json());
+          console.log(res)
+          if (!res || !res.data) {
+              dnotify('上传失败，请重试');
+              return reso({});
+          }
+          dnotify('上传图片成功');
+          reso({name: file.name, size: file.size, type: file.type, url: `https://f.199311.xyz/tmp/${res.data}`})
+          
+      } catch (error) {
+          dnotify('上传失败，请重试');
+          console.error('Upload error:', error);
+          reso({})
+      }
     }
     inputEl.click()
   })
