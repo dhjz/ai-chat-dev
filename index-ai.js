@@ -624,7 +624,7 @@ async function uploadImageUrl(file) {
   }
   const formData = new FormData();
   formData.append('file', file);
-  dnotify('上传中, 请等待完成...');
+  dnotify('上传图片中, 请等待完成...');
   try {
       const res = await fetch(`https://f.199311.xyz/tmp`, { method: 'POST', body: formData }).then(res => res.json());
       console.log(res)
