@@ -16,6 +16,7 @@
       --primary-color: #409eff; --danger-color: #f56c6c; --text-color-primary: #303133;
       --text-color-regular: #606266;
     }
+    .fixed-btn { position: fixed;  right: 5%; top: 49%; }
     .flex { display: flex; gap: 8px; }
     .flex-1 { flex: 1; }
     .mb10 { margin-bottom: 10px; }
@@ -83,6 +84,7 @@
       input, select, button { font-size: 12px; }
       button, .btn { padding: 0 4px; }
       .provider-form-grid {grid-template-columns: 56px 1fr 64px 1fr;}
+      .fixed-btn { display: none; }
     }
   </style>
 </head>
@@ -90,6 +92,7 @@
   <div id="app" v-cloak>
     <h1>AI Chat 设置 
       <div><button class="btn btn-primary" @click="saveSetting">保存</button><button class="btn-primary" onclick="location.href = './index.html'">Chat对话</button></div>
+      <div class="fixed-btn"><button @click="saveSetting">保存</button><button onclick="location.href = './index.html'">Chat对话</button></div>
     </h1>
 
     <div class="provider-card">
