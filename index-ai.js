@@ -33,7 +33,7 @@ window.vueApp = Vue.createApp({
         temperature: 0.6,
         top_p: 1,
       },
-      enableThinking: true
+      enableThinking: localStorage.getItem('dai-enableThinking') !== 'false'
     };
   },
   computed: {
@@ -69,6 +69,9 @@ window.vueApp = Vue.createApp({
     },
     useContext(val) {
       localStorage.setItem('dai-useContext', val);
+    },
+    enableThinking(val) {
+      localStorage.setItem('dai-enableThinking', val);
     },
     userInput() {
       // 自动调整textarea高度

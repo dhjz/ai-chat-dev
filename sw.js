@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'chat-cache-v12';
+const CACHE_NAME = 'chat-cache-v13';
 const URLS_TO_PRECACHE = [
   '/',
   // '/favicon.ico',
