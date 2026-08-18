@@ -345,6 +345,9 @@ pre.over-code {
   background-color: var(--c-bg);
   transition: border-color 0.3s;
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .chat-input-wrapper {
@@ -374,12 +377,15 @@ pre.over-code {
   outline: none;
 }
 .input-before {
-  position: absolute;
+  /* position: absolute;
   left: 4px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%); */
   cursor: pointer;
   user-select: none;
+}
+.disable {
+  filter: grayscale(0.9);
 }
 
 .send-btn-wrap {

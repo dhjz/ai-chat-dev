@@ -33,6 +33,7 @@ window.vueApp = Vue.createApp({
         temperature: 0.6,
         top_p: 1,
       },
+      enableThinking: true
     };
   },
   computed: {
@@ -249,7 +250,7 @@ window.vueApp = Vue.createApp({
             }
           }
         })
-
+        const thinking = this.enableThinking ? {} : { enable_thinking: false, extra_body: { 'enable_thinking': false } }
 
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
@@ -266,6 +267,7 @@ window.vueApp = Vue.createApp({
             stream_options: {include_usage: true }, // 返回使用量
             temperature: this.config.temperature, // 0-2 越小随机性越小
             top_p: this.config.top_p,
+            ...thinking
           }),
           signal: this.abortController.signal,
         });

@@ -78,6 +78,7 @@
       </div>
       <div class="chat-input-area">
         <div class="input-before" title="支持上下文, 消耗更多token" @click="useContext =! useContext">{{ useContext ? '🟢' : '🔴' }}</div>
+        <div :class="{ disable: !enableThinking, 'input-before': true}" @click="enableThinking =! enableThinking" title="是否思考模式, 默认开启">💡</div>
         <div class="chat-input-wrapper">
           <textarea v-model="userInput" class="chat-input" @keydown.enter="handleEnter"
             placeholder="输入消息提问...(Shift+Enter 换行)" rows="1"></textarea>
