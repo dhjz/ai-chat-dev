@@ -253,7 +253,7 @@ window.vueApp = Vue.createApp({
             }
           }
         })
-        const thinking = this.enableThinking ? {} : { enable_thinking: false, extra_body: { 'enable_thinking': false } }
+        const thinking = this.enableThinking ? {} : { enable_thinking: false, extra_body: { 'enable_thinking': false }, thinking: { 'type': 'disabled' } }
 
         const response = await fetch(provider.url + '/chat/completions', {
           method: 'POST',
